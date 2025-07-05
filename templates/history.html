@@ -1,0 +1,12 @@
+<h2>Lịch sử transcript</h2>
+{% for item in history %}
+<div style="border: 1px solid #ccc; margin-bottom: 10px; padding: 10px">
+  <p><strong>File:</strong> {{ item.filename }}</p>
+  <p>
+    <strong>Ngày:</strong> {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+  </p>
+  <pre>{{ item.transcript }}</pre>
+</div>
+{% else %}
+<p>Không có lịch sử.</p>
+{% endfor %}

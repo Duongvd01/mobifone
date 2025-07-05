@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng ký - Mobifone</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #004e92, #000428);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .register-container {
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        width: 100%;
+        max-width: 450px;
+      }
+
+      h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #00a0e9;
+      }
+
+      .flash-messages {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 20px;
+      }
+
+      .flash-messages li {
+        background-color: rgba(255, 0, 0, 0.1);
+        color: #ffcccc;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        font-size: 0.95em;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+      }
+
+      label {
+        margin-bottom: 5px;
+        font-weight: 600;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+        padding: 12px;
+        border: none;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        font-size: 1em;
+      }
+
+      input[type="submit"] {
+        background-color: #00a0e9;
+        color: white;
+        border: none;
+        padding: 12px;
+        font-size: 1em;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      input[type="submit"]:hover {
+        background-color: #007bb5;
+      }
+
+      .back-home {
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .back-home a {
+        color: #ccc;
+        text-decoration: none;
+      }
+
+      .back-home a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="register-container">
+      <h2>Đăng ký tài khoản Mobifone</h2>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <ul class="flash-messages">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% endwith %}
+
+      <form method="POST" action="{{ url_for('register') }}">
+        <label for="username">Tên đăng nhập</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Nhập tên đăng nhập"
+          required
+        />
+
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="Nhập email"
+          required
+        />
+
+        <label for="password">Mật khẩu</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Nhập mật khẩu"
+          required
+        />
+
+        <label for="confirm_password">Xác nhận mật khẩu</label>
+        <input
+          type="password"
+          id="confirm_password"
+          name="confirm_password"
+          placeholder="Nhập lại mật khẩu"
+          required
+        />
+
+        <input type="submit" value="Đăng ký" />
+      </form>
+
+      <div class="back-home">
+        <p>Đã có tài khoản? <a href="{{ url_for('login') }}">Đăng nhập</a></p>
+        <p><a href="{{ url_for('index') }}">← Quay về Trang chủ</a></p>
+      </div>
+    </div>
+  </body>
+</html>

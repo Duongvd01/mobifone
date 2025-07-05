@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập - Mobifone</title>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #004e92, #000428);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .login-container {
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        width: 100%;
+        max-width: 400px;
+      }
+
+      h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #00a0e9;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Căn giữa các phần tử trong form */
+      }
+
+      label {
+        margin-bottom: 5px;
+        font-weight: 600;
+        align-self: flex-start; /* Giữ label bên trái */
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        padding: 12px;
+        border: none;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        font-size: 1em;
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        width: 100%; /* Đảm bảo input chiếm toàn bộ chiều rộng */
+      }
+
+      input[type="text"]::placeholder,
+      input[type="password"]::placeholder {
+        color: #ccc;
+      }
+
+      input[type="submit"] {
+        background-color: #00a0e9;
+        color: white;
+        border: none;
+        padding: 12px 24px; /* Tăng kích thước padding cho nút đẹp hơn */
+        font-size: 1em;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        width: auto; /* Để nút tự điều chỉnh kích thước */
+      }
+
+      input[type="submit"]:hover {
+        background-color: #007bb5;
+      }
+
+      .google-login-container {
+        text-align: center; /* Căn giữa nút Google */
+        margin-top: 20px;
+      }
+
+      .google-login {
+        background-color: #ffffff;
+        color: #000000;
+        border: 1px solid #ccc;
+        padding: 12px 24px; /* Tăng kích thước padding cho nút đẹp hơn */
+        font-size: 1em;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: auto; /* Để nút tự điều chỉnh kích thước */
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+
+      .google-login:hover {
+        background-color: #e0e0e0;
+        color: #000000;
+      }
+
+      .google-login img {
+        width: 20px;
+        height: 20px;
+      }
+
+      .back-home {
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .back-home a {
+        color: #ccc;
+        text-decoration: none;
+      }
+
+      .back-home a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <h2>Đăng nhập Mobifone</h2>
+      <form method="POST" action="{{ url_for('login') }}">
+        <label for="username">Tên đăng nhập</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Nhập tên đăng nhập"
+          required
+        />
+
+        <label for="password">Mật khẩu</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Nhập mật khẩu"
+          required
+        />
+
+        <input type="submit" value="Đăng nhập" />
+      </form>
+      <div class="google-login-container">
+        <button class="google-login">
+          <img src="https://www.google.com/favicon.ico" alt="Google Logo" />
+          Đăng nhập bằng Google
+        </button>
+      </div>
+      <div class="back-home">
+        <p>
+          Chưa có tài khoản? <a href="{{ url_for('register') }}">Đăng ký</a>
+        </p>
+        <p><a href="{{ url_for('index') }}">← Quay về Trang chủ</a></p>
+      </div>
+    </div>
+  </body>
+</html>
