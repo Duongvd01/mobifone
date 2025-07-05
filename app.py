@@ -5,11 +5,12 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from bson.objectid import ObjectId
 import re
 import requests
+import os
 from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret123'
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/flaskauth'
+app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
 API_S2T = "http://180.93.183.64:8502/api/v1/s2t/version2"
 
 # Khởi tạo các thành phần
@@ -160,6 +161,18 @@ def history():
     user_history = mongo.db.transcripts.find({"username": current_user.username}).sort("created_at", -1)
     return render_template("history.html", history=user_history)
 
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template('404.html'), 403
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=os.environ.get('FLASK_ENV') == 'development')

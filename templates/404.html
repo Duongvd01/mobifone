@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Trang không tồn tại | Mobifone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a1a2e;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(45deg, #0a1a2e, #16213e, #0a1a2e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating elements */
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .floating-element {
+            position: absolute;
+            color: rgba(0, 209, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .floating-element:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+        .floating-element:nth-child(2) { top: 20%; right: 10%; animation-delay: 2s; }
+        .floating-element:nth-child(3) { bottom: 30%; left: 20%; animation-delay: 4s; }
+        .floating-element:nth-child(4) { bottom: 10%; right: 20%; animation-delay: 1s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        /* Main content */
+        .error-container {
+            max-width: 600px;
+            padding: 40px;
+            z-index: 10;
+        }
+
+        .error-code {
+            font-size: 8em;
+            font-weight: 900;
+            color: #00d1ff;
+            text-shadow: 0 0 30px rgba(0, 209, 255, 0.5);
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .error-title {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .error-message {
+            font-size: 1.2em;
+            color: #d1e8ff;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00d1ff, #007bff);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 209, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #00d1ff;
+            border: 2px solid #00d1ff;
+        }
+
+        .btn-secondary:hover {
+            background: #00d1ff;
+            color: #0a1a2e;
+            transform: translateY(-3px);
+        }
+
+        /* Robot icon animation */
+        .robot-icon {
+            font-size: 4em;
+            color: #00d1ff;
+            margin-bottom: 30px;
+            animation: robotMove 3s ease-in-out infinite;
+        }
+
+        @keyframes robotMove {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 6em;
+            }
+            
+            .error-title {
+                font-size: 2em;
+            }
+            
+            .error-message {
+                font-size: 1.1em;
+            }
+            
+            .error-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        /* Additional decorative elements */
+        .glitch {
+            position: relative;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            animation: glitch-1 0.5s infinite;
+            color: #ff0040;
+            z-index: -1;
+        }
+
+        .glitch::after {
+            animation: glitch-2 0.5s infinite;
+            color: #00ff40;
+            z-index: -2;
+        }
+
+        @keyframes glitch-1 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        @keyframes glitch-2 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(2px, 2px); }
+            40% { transform: translate(2px, -2px); }
+            60% { transform: translate(-2px, 2px); }
+            80% { transform: translate(-2px, -2px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <div class="floating-elements">
+        <div class="floating-element"><i class="fas fa-cog fa-3x"></i></div>
+        <div class="floating-element"><i class="fas fa-microchip fa-2x"></i></div>
+        <div class="floating-element"><i class="fas fa-wifi fa-2x"></i></div>
+        <div class="floating-element"><i class="fas fa-satellite fa-3x"></i></div>
+    </div>
+
+    <div class="error-container">
+        <div class="robot-icon">
+            <i class="fas fa-robot"></i>
+        </div>
+        
+        <div class="error-code glitch" data-text="404">404</div>
+        
+        <h1 class="error-title">Trang không tồn tại</h1>
+        
+        <p class="error-message">
+            Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển. 
+            Có thể bạn đã nhập sai địa chỉ hoặc liên kết đã hết hạn.
+        </p>
+        
+        <div class="error-actions">
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i>
+                Về trang chủ
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Quay lại
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive effects
+        document.addEventListener('mousemove', function(e) {
+            const elements = document.querySelectorAll('.floating-element');
+            elements.forEach(element => {
+                const rect = element.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (x > 0 && x < rect.width && y > 0 && y < rect.height) {
+                    element.style.transform = `scale(1.2) rotate(${Math.random() * 360}deg)`;
+                    element.style.color = 'rgba(0, 209, 255, 0.3)';
+                } else {
+                    element.style.transform = '';
+                    element.style.color = 'rgba(0, 209, 255, 0.1)';
+                }
+            });
+        });
+
+        // Random glitch effect
+        setInterval(() => {
+            const glitchElement = document.querySelector('.glitch');
+            glitchElement.style.animation = 'none';
+            setTimeout(() => {
+                glitchElement.style.animation = '';
+            }, 100);
+        }, 3000);
+    </script>
+</body>
+</html> 
