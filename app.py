@@ -13,6 +13,7 @@ from bson.objectid import ObjectId
 from werkzeug.utils import secure_filename
 import re
 import requests
+import os
 from datetime import datetime
 import os
 import logging
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret123'
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/flaskauth'
+app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
 
 # Folder to save uploaded audio for playback
 UPLOAD_FOLDER = os.path.join(app.static_folder, 'Uploads')
@@ -406,6 +407,18 @@ def ocr():
         username=current_user.username,
         history=mongo.db.ocr_history.find({'username': current_user.username}).sort('created_at', -1)
     )
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template('404.html'), 403
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=os.environ.get('FLASK_ENV') == 'development')
