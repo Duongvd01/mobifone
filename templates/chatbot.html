@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot - Mobifone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #004e92, #000428);
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+      }
+      .sidebar {
+        transition: transform 0.3s ease-in-out;
+        backdrop-filter: blur(10px);
+        background: rgba(31, 41, 55, 0.95);
+      }
+      .sidebar a.active {
+        background: #2563eb;
+        color: white;
+      }
+    </style>
+  </head>
+  <body class="flex text-white">
+    <!-- Sidebar -->
+    <div class="sidebar fixed top-0 left-0 h-screen w-64 p-6 z-50" id="sidebar">
+      <div class="logo mb-4">
+        <img src="/static/Logo_MBF.png" alt="Mobifone Logo" style="height: 40px;" />
+      </div>
+      <h2 class="text-lg font-semibold text-blue-200 mb-6">Xin chào, {{ username }} 👋</h2>
+      <nav>
+        <a href="/dashboard" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+          <i class="fas fa-home"></i> Dashboard
+        </a>
+        <a href="/speech-to-text" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+          <i class="fas fa-microphone"></i> Speech-to-Text
+        </a>
+        <a href="/chatbot" class="block py-3 px-4 text-white bg-blue-600 rounded active">
+          <i class="fas fa-robot"></i> Chatbot
+        </a>
+        <a href="/ocr" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+          <i class="fas fa-file-image"></i> OCR
+        </a>
+        <a href="/text-to-speech" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+          <i class="fas fa-volume-up"></i> Text to Speech
+        </a>
+        <a href="/history" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+          <i class="fas fa-history"></i> Lịch sử
+        </a>
+        <a href="{{ url_for('logout') }}" class="block py-3 px-4 text-gray-300 hover:bg-red-600 rounded mt-4">
+          <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </a>
+      </nav>
+    </div>
+
+    <!-- Main Chat -->
+    <div class="flex-1 ml-0 md:ml-64 flex flex-col h-screen">
+      <div class="flex-1 overflow-y-auto p-6 space-y-4" id="chatBox">
+        <!-- Tin nhắn sẽ được chèn tại đây -->
+      </div>
+
+      <form id="chat-form" class="p-4 bg-gray-900 flex gap-2">
+        <input
+          id="user-input"
+          type="text"
+          placeholder="Nhập tin nhắn..."
+          class="flex-1 px-4 py-2 rounded-lg bg-gray-800 text-white focus:outline-none"
+          required
+        />
+        <button class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg">Gửi</button>
+      </form>
+    </div>
+
+    <script>
+      const form = document.getElementById("chat-form");
+      const input = document.getElementById("user-input");
+      const chatBox = document.getElementById("chatBox");
+
+      function appendMessage(text, isUser) {
+        const wrapper = document.createElement("div");
+        wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+        const msg = document.createElement("div");
+        msg.className = `max-w-[75%] px-4 py-2 rounded-2xl whitespace-pre-wrap ${
+          isUser ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'
+        }`;
+        msg.textContent = text;
+        wrapper.appendChild(msg);
+        chatBox.appendChild(wrapper);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        appendMessage(text, true);
+        input.value = "";
+
+        try {
+          const res = await fetch("/chatbot", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: text }),
+          });
+          const data = await res.json();
+          appendMessage(data.reply, false);
+        } catch (err) {
+          appendMessage("❌ Lỗi khi kết nối chatbot.", false);
+        }
+      });
+    </script>
+  </body>
+</html>
