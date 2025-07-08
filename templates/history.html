@@ -1,12 +1,103 @@
-<h2>Lịch sử transcript</h2>
-{% for item in history %}
-<div style="border: 1px solid #ccc; margin-bottom: 10px; padding: 10px">
-  <p><strong>File:</strong> {{ item.filename }}</p>
-  <p>
-    <strong>Ngày:</strong> {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
-  </p>
-  <pre>{{ item.transcript }}</pre>
-</div>
-{% else %}
-<p>Không có lịch sử.</p>
-{% endfor %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lịch sử Transcript - Mobifone</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <style>
+    body {
+      background: linear-gradient(135deg, #004e92, #000428);
+      min-height: 100vh;
+      margin: 0;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .sidebar {
+      transition: transform 0.3s ease-in-out;
+      backdrop-filter: blur(10px);
+      background: rgba(31, 41, 55, 0.95);
+    }
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar a.active {
+      background: #2563eb;
+      color: white;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+    }
+  </style>
+</head>
+
+<body class="flex text-white">
+  <!-- Sidebar -->
+  <div class="sidebar fixed top-0 left-0 h-screen w-64 p-6 z-50" id="sidebar">
+    <div class="logo mb-4">
+      <img src="/static/Logo_MBF.png" alt="Mobifone Logo" style="height: 40px;" />
+    </div>
+    <h2 class="text-lg font-semibold text-blue-200 mb-6">Xin chào, {{ username }} 👋</h2>
+    <nav>
+      <a href="/dashboard" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+        <i class="fas fa-home"></i> Dashboard
+      </a>
+      <a href="/speech-to-text" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+        <i class="fas fa-microphone"></i> Speech-to-Text
+      </a>
+      <a href="/chatbot" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+        <i class="fas fa-robot"></i> Chatbot
+      </a>
+      <a href="/ocr" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+        <i class="fas fa-file-image"></i> OCR
+      </a>
+      <a href="/text-to-speech" class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded">
+        <i class="fas fa-volume-up"></i> Text to Speech
+      </a>
+      <a href="/history" class="block py-3 px-4 text-white bg-blue-600 rounded active">
+        <i class="fas fa-history"></i> Lịch sử
+      </a>
+      <a href="{{ url_for('logout') }}" class="block py-3 px-4 text-gray-300 hover:bg-red-600 rounded mt-4">
+        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+      </a>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-1 ml-0 md:ml-64 p-6 transition-all duration-300">
+    <h2 class="text-2xl font-bold text-blue-200 mb-6">🕘 Lịch sử Transcript</h2>
+
+    {% for item in history %}
+    <div class="bg-white/10 border border-gray-700 p-4 rounded-lg mb-4 shadow-md">
+      <p class="text-gray-300"><strong>📁 File:</strong> {{ item.filename }}</p>
+      <p class="text-sm text-gray-400"><strong>📅 Ngày:</strong> {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+      <pre class="whitespace-pre-wrap text-gray-200 bg-gray-800/30 p-3 rounded mt-2">{{ item.transcript }}</pre>
+    </div>
+    {% else %}
+    <p class="text-gray-400">Không có lịch sử.</p>
+    {% endfor %}
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open");
+    }
+    document.addEventListener("click", (event) => {
+      const sidebar = document.getElementById("sidebar");
+      if (window.innerWidth <= 768 && !sidebar.contains(event.target)) {
+        sidebar.classList.remove("open");
+      }
+    });
+  </script>
+</body>
+</html>
