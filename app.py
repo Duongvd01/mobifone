@@ -254,6 +254,62 @@ def history():
         username=current_user.username  
     )
 
+@app.route("/chatbot", methods=["GET", "POST"])
+@login_required
+def chatbot():
+    if request.method == "GET":
+        return render_template("chatbot.html", username=current_user.username)
 
+    if request.method == "POST":
+        data = request.get_json()
+        user_msg = data.get("message", "").strip()
+
+        # 🔁 Dummy bot trả lời — bạn thay bằng call OpenAI hoặc API riêng
+        if user_msg:
+            bot_reply = f"Bạn vừa nói: “{user_msg}”"
+        else:
+            bot_reply = "Tôi không hiểu bạn nói gì."
+
+        return jsonify({"reply": bot_reply})
+@app.route('/translate', methods=['POST'])
+@login_required
+def translate():
+    try:
+        data = request.get_json()
+        transcript = data.get('transcript')
+        target_language = data.get('target_language')
+
+        if not transcript or not target_language:
+            logger.error("Missing transcript or target_language")
+            return jsonify({
+                'error': 'Thiếu transcript hoặc ngôn ngữ đích.',
+                'translated_transcript': None
+            }), 400
+
+        # Placeholder for translation API call
+        # Replace with actual translation API (e.g., Google Translate, DeepL)
+        translated_transcript = []
+        for segment in transcript:
+            # Simulated translation (replace with real API call)
+            translated_text = f"[Translated to {target_language}] {segment['text']}"
+            translated_transcript.append({
+                'text': translated_text,
+                'start_time': segment['start_time'],
+                'end_time': segment['end_time'],
+                'speaker': segment.get('speaker', 'Unknown'),
+                'words': segment.get('words', [])
+            })
+
+        return jsonify({
+            'translated_transcript': translated_transcript,
+            'error': None
+        })
+
+    except Exception as e:
+        logger.error(f"Error translating transcript: {e}")
+        return jsonify({
+            'error': f'Lỗi khi dịch transcript: {str(e)}',
+            'translated_transcript': None
+        }), 500
 if __name__ == '__main__':
     app.run(debug=True)

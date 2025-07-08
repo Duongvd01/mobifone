@@ -243,12 +243,33 @@
             <div
               class="flex-1 flex flex-col bg-blue-900/50 p-4 border border-blue-500 rounded-lg"
             >
-              <h3 class="text-xl font-semibold mb-2 text-blue-300">
-                🌐 Bản dịch:
-              </h3>
+              <div class="flex items-center gap-4 mb-2">
+                <h3 class="text-xl font-semibold text-blue-300">
+                  🌐 Bản dịch:
+                </h3>
+                <select
+                  id="language-select"
+                  class="bg-blue-800 text-white border border-blue-300 rounded px-2 py-1"
+                >
+                  <option value="" disabled selected>Chọn ngôn ngữ</option>
+                  <option value="en">Tiếng Anh</option>
+                  <option value="fr">Tiếng Pháp</option>
+                  <option value="ja">Tiếng Nhật</option>
+                  <option value="zh">Tiếng Trung</option>
+                  <option value="es">Tiếng Tây Ban Nha</option>
+                </select>
+                <button
+                  id="translate-btn"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md transition duration-200"
+                >
+                  Dịch
+                </button>
+              </div>
               <textarea
+                id="translation-text"
                 class="flex-1 w-full overflow-auto resize-none bg-blue-800/30 text-white placeholder-gray-300 p-3 rounded"
                 placeholder="Bản dịch sẽ hiển thị ở đây…"
+                readonly
               ></textarea>
             </div>
           </div>
@@ -284,6 +305,8 @@
     </div>
 
     <script>
+      let currentTranscript = null;
+
       function toggleHistory() {
         document.getElementById("history-section").classList.toggle("hidden");
       }
@@ -321,6 +344,7 @@
         const audioSource = document.getElementById("audio-source");
         const transcriptSection = document.getElementById("transcript-section");
         const transcriptText = document.getElementById("transcript-text");
+        const translationText = document.getElementById("translation-text");
 
         // Reset UI
         progressContainer.classList.remove("hidden");
@@ -332,6 +356,8 @@
         transcriptSection.classList.add("hidden");
         audioSection.classList.add("hidden");
         transcriptText.innerHTML = "";
+        translationText.value = "";
+        currentTranscript = null;
 
         const formData = new FormData(form);
         const xhr = new XMLHttpRequest();
@@ -367,6 +393,8 @@
                       progressBar.style.backgroundColor = "#dc2626";
                       progressText.textContent = "Lỗi xử lý!";
                     } else if (response.transcript && response.transcript.length > 0) {
+                      // Store transcript for translation
+                      currentTranscript = response.transcript;
                       // Render transcript segments
                       response.transcript.forEach((segment, index) => {
                         const span = document.createElement("span");
@@ -433,6 +461,9 @@
         const audioSection = document.getElementById("audio-section");
         const fileInput = document.querySelector('input[type="file"][name="audio_file"]');
         const transcriptText = document.getElementById("transcript-text");
+        const translationText = document.getElementById("translation-text");
+        const languageSelect = document.getElementById("language-select");
+        const translateButton = document.getElementById("translate-btn");
 
         // Check if audio_url is provided by server
         if (audioPlayer.querySelector("source")?.src && audioPlayer.querySelector("source").src !== window.location.href) {
@@ -484,6 +515,46 @@
             segment.classList.remove("highlight");
           });
         });
+
+        // Handle translation
+        if (translateButton) {
+          translateButton.addEventListener("click", () => {
+            const targetLanguage = languageSelect.value;
+            if (!targetLanguage) {
+              alert("Vui lòng chọn một ngôn ngữ!");
+              return;
+            }
+            if (!currentTranscript) {
+              alert("Không có transcript để dịch!");
+              return;
+            }
+
+            fetch("/translate", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                transcript: currentTranscript,
+                target_language: targetLanguage
+              })
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.error) {
+                  alert(`Lỗi: ${data.error}`);
+                } else if (data.translated_transcript) {
+                  translationText.value = data.translated_transcript.map(segment => segment.text).join("\n");
+                } else {
+                  alert("Không nhận được bản dịch.");
+                }
+              })
+              .catch((error) => {
+                console.error("Error translating transcript:", error);
+                alert("Lỗi khi dịch transcript!");
+              });
+          });
+        }
       });
     </script>
   </body>
