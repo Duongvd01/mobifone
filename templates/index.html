@@ -41,24 +41,18 @@
         z-index: 1000;
         transition: background 0.3s ease;
       }
-
       header.scrolled {
         background: rgba(0, 0, 0, 0.8);
       }
 
-      .logo {
-        font-size: 1.8em;
-        font-weight: 700;
-        color: #00d1ff;
-        letter-spacing: 1px;
+      .logo img {
+        height: 40px;
       }
-
       .nav-menu {
         display: flex;
         align-items: center;
         gap: 30px;
       }
-
       .nav-menu a {
         color: white;
         text-decoration: none;
@@ -66,12 +60,154 @@
         font-weight: 500;
         transition: color 0.2s ease;
       }
-
       .nav-menu a:hover {
         color: #00d1ff;
       }
 
-      /* Dropdown Menu */
+      /* Buttons */
+      .nav-buttons a button {
+        background: linear-gradient(45deg, #00d1ff, #007bff);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-size: 1em;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .nav-buttons a button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 209, 255, 0.3);
+      }
+
+      /* Hero Section */
+      .hero {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        background: url("https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&w=1920")
+          no-repeat center/cover;
+        background-attachment: fixed;
+        position: relative;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 26, 46, 0.7);
+        z-index: 1;
+      }
+      .hero-content {
+        position: relative;
+        z-index: 2;
+        max-width: 800px;
+      }
+      .hero h1 {
+        font-size: 3.5em;
+        font-weight: 700;
+        margin-bottom: 20px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        padding-bottom: 5rem;
+      }
+      .hero p {
+        font-size: 1.3em;
+        max-width: 600px;
+        margin: 0 auto 30px;
+        color: #d1e8ff;
+      }
+      .hero a button {
+        background: linear-gradient(45deg, #00d1ff, #007bff);
+        padding: 15px 30px;
+        font-size: 1.1em;
+        border-radius: 30px;
+      }
+
+      /* Full-screen Products Section */
+      .products-full {
+        height: 100vh;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        background: #091726;
+      }
+      .products-full h2 {
+        margin-bottom: 50px;
+        font-size: 5em;
+        font-weight: 700;
+        color: #00d1ff;
+        padding: 10rem;
+        padding-top: 3%;
+        padding-bottom: 4rem;
+      }
+      .products-row {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: space-evenly;
+        align-items: center;
+        width: 100%;
+        gap: 40px;
+        padding: 0 40px;
+      }
+
+      /* Product Cards */
+      .product-card {
+        background: rgba(0, 209, 255, 0.1);
+        border: 1px solid rgba(0, 209, 255, 0.3);
+        border-radius: 20px;
+        padding: 50px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 8px 30px rgba(0, 209, 255, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        flex: 0 0 420px;
+      }
+      .product-card:hover {
+        transform: translateY(-10px) scale(1.03);
+        box-shadow: 0 12px 40px rgba(0, 209, 255, 0.3);
+      }
+      .product-card h3 {
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+      .product-card p {
+        font-size: 1.1em;
+        line-height: 1.6;
+        color: #e0f7ff;
+      }
+
+      /* Contact Section */
+      .contact {
+        background: linear-gradient(45deg, #004e92, #000428);
+        padding: 60px 20px;
+      }
+      .contact h2 {
+        font-size: 2.5em;
+        font-weight: 600;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+      .contact p {
+        font-size: 1.2em;
+        margin-bottom: 15px;
+        text-align: center;
+      }
+      .contact a {
+        color: #00d1ff;
+      }
+
+      /* Footer */
+      footer {
+        text-align: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        font-size: 0.9em;
+      }
+
       .dropdown {
         position: relative;
       }
@@ -104,266 +240,26 @@
         color: #00d1ff;
       }
 
-      .nav-buttons {
-        display: flex;
-        gap: 20px;
-      }
-
-      .nav-buttons a button {
-        background: linear-gradient(45deg, #00d1ff, #007bff);
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        font-size: 1em;
-        border-radius: 30px;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      .nav-buttons a button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 209, 255, 0.3);
-      }
-
-      /* Main Hero Section */
-      .hero {
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        background: url("https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&w=1920")
-          no-repeat center/cover;
-        background-attachment: fixed;
-        position: relative;
-      }
-
-      .hero::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 26, 46, 0.7);
-        z-index: 1;
-      }
-
-      .hero-content {
-        position: relative;
-        z-index: 2;
-        max-width: 800px;
-      }
-
-      .hero h1 {
-        font-size: 3.5em;
-        font-weight: 700;
-        margin-bottom: 20px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-      }
-
-      .hero p {
-        font-size: 1.3em;
-        max-width: 600px;
-        margin: 0 auto 30px;
-        color: #d1e8ff;
-      }
-
-      .hero a button {
-        background: linear-gradient(45deg, #00d1ff, #007bff);
-        border: none;
-        padding: 15px 30px;
-        font-size: 1.1em;
-        border-radius: 30px;
-        cursor: pointer;
-        color: white;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      .hero a button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 6px 15px rgba(0, 209, 255, 0.4);
-      }
-
-      /* Section Styles */
-      .section {
-        padding: 80px 60px;
-        text-align: center;
-      }
-
-      .section h2 {
-        font-size: 2.5em;
-        margin-bottom: 30px;
-        font-weight: 600;
-      }
-
-      /* Products Section */
-      .products {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 30px;
-        padding: 0 20px;
-      }
-
-      .product-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        padding: 30px;
-        backdrop-filter: blur(10px);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-
-      .product-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 8px 20px rgba(0, 209, 255, 0.2);
-      }
-
-      .product-card h3 {
-        font-size: 1.6em;
-        margin-bottom: 15px;
-      }
-
-      .product-card p {
-        font-size: 1em;
-        color: #d1e8ff;
-      }
-
-      /* Partners Section */
-      .partners {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        padding: 0 20px;
-      }
-
-      .partner-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 15px;
-        padding: 20px;
-        text-align: center;
-        backdrop-filter: blur(10px);
-      }
-
-      .partner-card img {
-        width: 120px;
-        height: 120px;
-        object-fit: contain;
-        margin-bottom: 15px;
-      }
-
-      .partner-card p {
-        font-size: 1em;
-        color: #d1e8ff;
-      }
-
-      /* Contact Section */
-      .contact {
-        background: linear-gradient(45deg, #004e92, #000428);
-        padding: 60px 20px;
-      }
-
-      .contact p {
-        font-size: 1.1em;
-        margin-bottom: 15px;
-      }
-
-      .contact a {
-        color: #00d1ff;
-        text-decoration: none;
-        transition: color 0.2s ease;
-      }
-
-      .contact a:hover {
-        color: #007bff;
-      }
-
-      /* Footer */
-      footer {
-        text-align: center;
-        padding: 20px;
-        background: rgba(0, 0, 0, 0.8);
-        color: #d1e8ff;
-        font-size: 0.9em;
-      }
-
-      /* Mobile Menu Toggle */
-      .menu-toggle {
-        display: none;
-        font-size: 1.5em;
-        color: #00d1ff;
-        cursor: pointer;
-      }
-
       /* Responsive */
-      @media (max-width: 768px) {
-        header {
-          padding: 15px 20px;
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .nav-menu {
-          display: none;
-          position: absolute;
-          top: 80px;
-          left: 0;
-          width: 100%;
-          background: rgba(0, 0, 0, 0.9);
-          flex-direction: column;
-          padding: 20px;
-        }
-
-        .nav-menu.active {
-          display: flex;
-        }
-
-        .dropdown-content {
-          position: static;
-          background: rgba(255, 255, 255, 0.1);
-          box-shadow: none;
-        }
-
-        .nav-buttons {
-          margin-top: 15px;
+      @media (max-width: 1024px) {
+        .products-row {
           flex-wrap: wrap;
-          gap: 10px;
+          justify-content: center;
+          gap: 30px;
         }
-
-        .menu-toggle {
-          display: block;
-        }
-
-        .hero h1 {
-          font-size: 2.5em;
-        }
-
-        .hero p {
-          font-size: 1.1em;
-        }
-
-        .section {
-          padding: 40px 20px;
-        }
-
-        .section h2 {
-          font-size: 2em;
+        .product-card {
+          flex: 0 0 350px;
         }
       }
-
+      @media (max-width: 768px) {
+        .products-row {
+          flex-wrap: wrap;
+        }
+      }
       @media (max-width: 480px) {
-        .hero {
-          background-attachment: scroll;
-        }
-
-        .hero h1 {
-          font-size: 2em;
-        }
-
-        .products,
-        .partners {
-          grid-template-columns: 1fr;
+        .products-row {
+          flex-direction: column;
+          align-items: center;
         }
       }
     </style>
@@ -371,13 +267,8 @@
   <body>
     <header>
       <div class="logo">
-        <img
-          src="static\Logo_MBF.png"
-          alt="Mobifone Logo"
-          style="height: 40px; vertical-align: middle"
-        />
+        <img src="static/Logo_MBF.png" alt="Mobifone Logo" />
       </div>
-      <i class="fas fa-bars menu-toggle"></i>
       <nav class="nav-menu">
         <a href="#home">Trang chủ</a>
         <div class="dropdown">
@@ -397,7 +288,7 @@
       </div>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Hero -->
     <section class="hero" id="home">
       <div class="hero-content" data-aos="fade-up">
         <h1>Chào mừng đến với Tương Lai Viễn thông</h1>
@@ -409,40 +300,25 @@
       </div>
     </section>
 
-    <!-- Products Section -->
-    <section class="section products" id="products">
+    <!-- Products -->
+    <section class="products-full" id="products">
       <h2 data-aos="fade-up">Sản phẩm nổi bật</h2>
-      <div class="products">
-        <div
-          class="product-card"
-          data-aos="fade-up"
-          data-aos-delay="100"
-          id="ai"
-        >
+      <div class="products-row">
+        <div class="product-card" data-aos="fade-up" data-aos-delay="100">
           <h3>AI Solutions</h3>
           <p>
             Các giải pháp trí tuệ nhân tạo tiên tiến giúp tối ưu hóa quy trình
             kinh doanh và nâng cao trải nghiệm khách hàng.
           </p>
         </div>
-        <div
-          class="product-card"
-          data-aos="fade-up"
-          data-aos-delay="200"
-          id="speech-to-text"
-        >
+        <div class="product-card" data-aos="fade-up" data-aos-delay="200">
           <h3>Speech-to-Text</h3>
           <p>
             Công nghệ chuyển đổi giọng nói thành văn bản chính xác, hỗ trợ đa
             ngôn ngữ, phù hợp cho doanh nghiệp và cá nhân.
           </p>
         </div>
-        <div
-          class="product-card"
-          data-aos="fade-up"
-          data-aos-delay="300"
-          id="cloud"
-        >
+        <div class="product-card" data-aos="fade-up" data-aos-delay="300">
           <h3>Cloud Services</h3>
           <p>
             Dịch vụ điện toán đám mây an toàn, linh hoạt, giúp doanh nghiệp lưu
@@ -452,8 +328,8 @@
       </div>
     </section>
 
-    <!-- Contact Section -->
-    <section class="section contact" id="contact">
+    <!-- Contact -->
+    <section class="contact" id="contact">
       <h2 data-aos="fade-up">Liên hệ với chúng tôi</h2>
       <p>Email: <a href="mailto:support@mobifone.vn">support@mobifone.vn</a></p>
       <p>Hotline: <a href="tel:18001090">1800 1090</a></p>
@@ -463,24 +339,13 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     <script>
-      // Initialize AOS
-      AOS.init({
-        duration: 800,
-        once: true,
-      });
-
-      // Header scroll effect
+      AOS.init({ duration: 800, once: true });
       window.addEventListener("scroll", () => {
-        const header = document.querySelector("header");
-        header.classList.toggle("scrolled", window.scrollY > 50);
+        document
+          .querySelector("header")
+          .classList.toggle("scrolled", window.scrollY > 50);
       });
-
-      // Mobile menu toggle
-      const menuToggle = document.querySelector(".menu-toggle");
-      const navMenu = document.querySelector(".nav-menu");
-      menuToggle.addEventListener("click", () => {
-        navMenu.classList.toggle("active");
-      });
+      // Removed menu-toggle script since no <i> tag is used anymore
     </script>
   </body>
 </html>
