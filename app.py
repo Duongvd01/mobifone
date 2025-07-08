@@ -311,5 +311,101 @@ def translate():
             'error': f'Lỗi khi dịch transcript: {str(e)}',
             'translated_transcript': None
         }), 500
+@app.route('/ocr', methods=['GET', 'POST'])
+@login_required
+def ocr():
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if not file or not file.filename:
+            logger.error("No file selected")
+            return jsonify({
+                'error': 'Không có file được chọn.',
+                'text': None,
+                'file_url': None
+            }), 400
+
+        # Validate file extension
+        allowed_extensions = {'.jpg', '.jpeg', '.png', '.pdf'}
+        if not os.path.splitext(file.filename)[1].lower() in allowed_extensions:
+            logger.error(f"Invalid file extension: {file.filename}")
+            return jsonify({
+                'error': 'Định dạng file không được hỗ trợ. Vui lòng chọn file .jpg, .jpeg, .png hoặc .pdf.',
+                'text': None,
+                'file_url': None
+            }), 400
+
+        # Save file
+        filename = secure_filename(file.filename)
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
+        try:
+            file.save(save_path)
+            logger.debug(f"File saved to {save_path}")
+        except Exception as e:
+            logger.error(f"Failed to save file: {e}")
+            return jsonify({
+                'error': f'Lỗi lưu file: {str(e)}',
+                'text': None,
+                'file_url': None
+            }), 500
+
+        # Verify file exists
+        if not os.path.exists(save_path):
+            logger.error(f"File not found after saving: {save_path}")
+            return jsonify({
+                'error': 'Không thể lưu file.',
+                'text': None,
+                'file_url': None
+            }), 500
+
+        # OCR API call (placeholder)
+        try:
+            with open(save_path, 'rb') as f:
+                files = {'file': (filename, f, file.mimetype)}
+                resp = requests.post(API_OCR, files=files)
+            if resp.status_code == 200:
+                api_response = resp.json()
+                ocr_text = api_response.get('text', '')
+                logger.debug(f"OCR text: {ocr_text}")
+            else:
+                ocr_text = f"Lỗi API: {resp.status_code}"
+                logger.error(f"API error: {resp.status_code}")
+        except Exception as e:
+            ocr_text = f"Lỗi hệ thống: {str(e)}"
+            logger.error(f"API call failed: {e}")
+
+        # Save to DB
+        try:
+            mongo.db.ocr_history.insert_one({
+                'username': current_user.username,
+                'filename': filename,
+                'text': ocr_text,
+                'created_at': datetime.utcnow()
+            })
+            logger.debug("OCR result saved to database")
+        except Exception as e:
+            logger.error(f"Database error: {e}")
+            return jsonify({
+                'error': f'Lỗi lưu vào cơ sở dữ liệu: {str(e)}',
+                'text': ocr_text,
+                'file_url': None
+            }), 500
+
+        # Build file URL
+        file_url = url_for('static', filename=f'Uploads/{filename}', _external=True)
+        logger.debug(f"File URL: {file_url}")
+
+        return jsonify({
+            'text': ocr_text,
+            'file_url': file_url,
+            'error': None
+        })
+
+    # GET
+    return render_template(
+        'ocr.html',
+        username=current_user.username,
+        history=mongo.db.ocr_history.find({'username': current_user.username}).sort('created_at', -1)
+    )
+
 if __name__ == '__main__':
     app.run(debug=True)
