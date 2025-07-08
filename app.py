@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 import re
 import requests
 import os
+import os
 from datetime import datetime
 import os
 import logging
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret123'
+app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
 app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
 
 # Folder to save uploaded audio for playback
@@ -245,16 +247,21 @@ def s2t():
 @app.route('/history')
 @login_required
 def history():
-    user_history = mongo.db.transcripts.find(
-        {'username': current_user.username}
-    ).sort('created_at', -1)
+    user_history = mongo.db.transcripts.find({"username": current_user.username}).sort("created_at", -1)
+    return render_template("history.html", history=user_history)
 
-    return render_template(
-        'history.html',
-        history=user_history,
-        username=current_user.username  
-    )
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
 
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template('404.html'), 403
 @app.route("/chatbot", methods=["GET", "POST"])
 @login_required
 def chatbot():
