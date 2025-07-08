@@ -38,6 +38,36 @@
           transform: translateX(0);
         }
       }
+      .progress-container {
+        width: 100%;
+        max-width: 500px;
+        margin-top: 1rem;
+      }
+      .progress-bar {
+        width: 0%;
+        height: 20px;
+        background-color: #2563eb;
+        border-radius: 5px;
+        transition: width 0.3s ease-in-out;
+      }
+      .progress-text {
+        margin-top: 0.5rem;
+        color: #e5e7eb;
+      }
+      .error-message {
+        color: #dc2626;
+        margin-top: 1rem;
+      }
+      .highlight {
+        background-color: #facc15; /* Yellow highlight */
+        color: #1f2937; /* Dark text for contrast */
+        padding: 2px 4px;
+        border-radius: 3px;
+      }
+      .transcript-segment {
+        margin-right: 4px;
+        cursor: pointer; /* Allow clicking to jump to time */
+      }
     </style>
   </head>
   <body class="flex text-white">
@@ -48,7 +78,7 @@
     >
       <div class="logo mb-4">
         <img
-          src="static\Logo_MBF.png"
+          src="{{ url_for('static', filename='Logo_MBF.png') }}"
           alt="Mobifone Logo"
           style="height: 40px; vertical-align: middle"
         />
@@ -64,7 +94,7 @@
           <i class="fas fa-home"></i> Dashboard
         </a>
         <a
-          href="#"
+          href="/speech-to-text"
           class="block py-3 px-4 text-gray-300 bg-blue-600 rounded transition duration-200 active"
         >
           <i class="fas fa-microphone"></i> Speech-to-Text
@@ -88,7 +118,7 @@
           <i class="fas fa-volume-up"></i> Text to Speech
         </a>
         <a
-          href="http://127.0.0.1:5000/history"
+          href="/history"
           class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded transition duration-200"
           onclick="toggleHistory()"
         >
@@ -131,10 +161,12 @@
       >
         <h2 class="text-2xl font-bold text-blue-200 mb-4">Speech-to-Text</h2>
         <form
+          id="upload-form"
           action="/speech-to-text"
           method="POST"
           enctype="multipart/form-data"
           class="flex flex-col md:flex-row items-center gap-4 mb-6"
+          onsubmit="handleFormSubmit(event)"
         >
           <input
             type="file"
@@ -158,20 +190,69 @@
           </button>
         </form>
 
-        {% if transcript %}
-        <div
-          class="mt-6 bg-green-900/50 p-4 border border-green-500 rounded-lg"
-        >
-          <h3 class="text-xl font-semibold mb-2 text-green-300">
-            🎧 Kết quả chuyển giọng nói:
-          </h3>
-          <pre
-            class="whitespace-pre-wrap text-gray-100 bg-green-800/30 p-3 rounded"
-          >
-{{ transcript }}</pre
-          >
+        <!-- Progress bar and status -->
+        <div class="progress-container hidden" id="progress-container">
+          <div class="w-full bg-gray-700 rounded-lg h-5">
+            <div
+              class="progress-bar"
+              id="progress-bar"
+              role="progressbar"
+            ></div>
+          </div>
+          <p class="progress-text" id="progress-text">Đang xử lý...</p>
+          <p class="error-message hidden" id="error-message"></p>
         </div>
-        {% endif %}
+
+        <!-- Audio player section -->
+        <div id="audio-section" class="hidden mt-4">
+          <audio
+            id="audio-player"
+            controls
+            preload="auto"
+            class="w-full rounded bg-gray-800"
+          >
+            <source id="audio-source" src="" type="audio/mpeg">
+            <source src="" type="audio/wav">
+            Trình duyệt của bạn không hỗ trợ thẻ audio.
+          </audio>
+        </div>
+
+        <!-- Transcript section -->
+        <div id="transcript-section" class="{% if transcript %}block{% else %}hidden{% endif %} mt-6">
+          <div class="flex flex-col md:flex-row gap-6">
+            <!-- Column 1: Transcript -->
+            <div
+              class="flex-1 flex flex-col bg-green-900/50 p-4 border border-green-500 rounded-lg"
+            >
+              <h3 class="text-xl font-semibold mb-2 text-green-300">
+                🎧 Kết quả chuyển giọng nói:
+              </h3>
+              <div
+                id="transcript-text"
+                class="flex-1 overflow-auto whitespace-pre-wrap text-gray-100 bg-green-800/30 p-3 rounded"
+              >
+                {% if transcript %}
+                  {% for segment in transcript %}
+                    <span class="transcript-segment" data-start="{{ segment.start_time }}" data-end="{{ segment.end_time }}">{{ segment.text }}</span>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Column 2: Translation -->
+            <div
+              class="flex-1 flex flex-col bg-blue-900/50 p-4 border border-blue-500 rounded-lg"
+            >
+              <h3 class="text-xl font-semibold mb-2 text-blue-300">
+                🌐 Bản dịch:
+              </h3>
+              <textarea
+                class="flex-1 w-full overflow-auto resize-none bg-blue-800/30 text-white placeholder-gray-300 p-3 rounded"
+                placeholder="Bản dịch sẽ hiển thị ở đây…"
+              ></textarea>
+            </div>
+          </div>
+        </div>
 
         <div id="history-section" class="hidden mt-6">
           <h2 class="text-2xl font-bold text-blue-200 mb-4">
@@ -185,14 +266,15 @@
               <strong>📁 File:</strong> {{ item.filename }}
             </p>
             <p class="text-sm text-gray-400">
-              <strong>📅 Ngày:</strong> {{ item.created_at.strftime('%Y-%m-%d
-              %H:%M:%S') }}
+              <strong>📅 Ngày:</strong> {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
             </p>
-            <pre
+            <div
               class="whitespace-pre-wrap text-gray-200 bg-gray-800/30 p-3 rounded mt-2"
             >
-{{ item.transcript }}</pre
-            >
+              {% for segment in item.transcript %}
+                <span class="transcript-segment" data-start="{{ segment.start_time }}" data-end="{{ segment.end_time }}">{{ segment.text }}</span>
+              {% endfor %}
+            </div>
           </div>
           {% else %}
           <p class="text-gray-400">Không có lịch sử.</p>
@@ -203,22 +285,205 @@
 
     <script>
       function toggleHistory() {
-        const historySection = document.getElementById("history-section");
-        historySection.classList.toggle("hidden");
+        document.getElementById("history-section").classList.toggle("hidden");
       }
-
       function toggleSidebar() {
-        const sidebar = document.getElementById("sidebar");
-        sidebar.classList.toggle("open");
+        document.getElementById("sidebar").classList.toggle("open");
       }
-
-      // Close sidebar when clicking outside on mobile
-      document.addEventListener("click", function (event) {
+      document.addEventListener("click", (event) => {
         const sidebar = document.getElementById("sidebar");
-        const isClickInside = sidebar.contains(event.target);
-        if (window.innerWidth <= 768 && !isClickInside) {
+        if (window.innerWidth <= 768 && !sidebar.contains(event.target)) {
           sidebar.classList.remove("open");
         }
+      });
+
+      function validateForm() {
+        const fileInput = document.querySelector('input[type="file"][name="audio_file"]');
+        if (!fileInput.files.length) {
+          alert("Vui lòng chọn một tệp âm thanh!");
+          return false;
+        }
+        return true;
+      }
+
+      function handleFormSubmit(event) {
+        event.preventDefault();
+        if (!validateForm()) return;
+
+        const form = document.getElementById("upload-form");
+        const fileInput = document.querySelector('input[type="file"][name="audio_file"]');
+        const progressContainer = document.getElementById("progress-container");
+        const progressBar = document.getElementById("progress-bar");
+        const progressText = document.getElementById("progress-text");
+        const errorMessage = document.getElementById("error-message");
+        const audioSection = document.getElementById("audio-section");
+        const audioPlayer = document.getElementById("audio-player");
+        const audioSource = document.getElementById("audio-source");
+        const transcriptSection = document.getElementById("transcript-section");
+        const transcriptText = document.getElementById("transcript-text");
+
+        // Reset UI
+        progressContainer.classList.remove("hidden");
+        progressBar.style.width = "0%";
+        progressBar.style.backgroundColor = "#2563eb";
+        progressText.textContent = "Đang tải file...";
+        errorMessage.classList.add("hidden");
+        errorMessage.textContent = "";
+        transcriptSection.classList.add("hidden");
+        audioSection.classList.add("hidden");
+        transcriptText.innerHTML = "";
+
+        const formData = new FormData(form);
+        const xhr = new XMLHttpRequest();
+
+        // Track upload progress
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 50);
+            progressBar.style.width = `${percent}%`;
+            progressText.textContent = `Đang tải file: ${percent}%`;
+          }
+        });
+
+        xhr.open("POST", "/speech-to-text", true);
+
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === XMLHttpRequest.DONE) {
+            let progress = 50;
+            const interval = setInterval(() => {
+              progress += 5;
+              progressBar.style.width = `${progress}%`;
+              progressText.textContent = `Đang xử lý API: ${progress}%`;
+              if (progress >= 100) {
+                clearInterval(interval);
+                progressContainer.classList.add("hidden"); // Hide progress bar
+                if (xhr.status === 200) {
+                  try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.error) {
+                      errorMessage.textContent = response.error;
+                      errorMessage.classList.remove("hidden");
+                      progressContainer.classList.remove("hidden");
+                      progressBar.style.backgroundColor = "#dc2626";
+                      progressText.textContent = "Lỗi xử lý!";
+                    } else if (response.transcript && response.transcript.length > 0) {
+                      // Render transcript segments
+                      response.transcript.forEach((segment, index) => {
+                        const span = document.createElement("span");
+                        span.classList.add("transcript-segment");
+                        span.dataset.start = segment.start_time;
+                        span.dataset.end = segment.end_time;
+                        span.textContent = segment.text + " ";
+                        // Allow clicking segment to jump to time
+                        span.addEventListener("click", () => {
+                          audioPlayer.currentTime = parseFloat(segment.start_time);
+                          audioPlayer.play();
+                        });
+                        transcriptText.appendChild(span);
+                      });
+                      transcriptSection.classList.remove("hidden");
+                      if (response.audio_url) {
+                        audioSection.classList.remove("hidden");
+                        audioSource.src = response.audio_url;
+                        audioPlayer.load();
+                      }
+                      progressText.textContent = "Hoàn tất!";
+                    } else {
+                      errorMessage.textContent = "Không nhận được transcript.";
+                      errorMessage.classList.remove("hidden");
+                      progressContainer.classList.remove("hidden");
+                      progressBar.style.backgroundColor = "#dc2626";
+                      progressText.textContent = "Lỗi xử lý!";
+                    }
+                  } catch (e) {
+                    progressContainer.classList.remove("hidden");
+                    progressBar.style.backgroundColor = "#dc2626";
+                    progressText.textContent = "Lỗi phân tích dữ liệu!";
+                    errorMessage.textContent = "Phản hồi không phải JSON hợp lệ.";
+                    errorMessage.classList.remove("hidden");
+                    console.error("JSON parse error:", e);
+                  }
+                } else {
+                  progressContainer.classList.remove("hidden");
+                  progressBar.style.width = "100%";
+                  progressBar.style.backgroundColor = "#dc2626";
+                  progressText.textContent = `Lỗi server: ${xhr.status}`;
+                  errorMessage.textContent = `Không thể xử lý file. Mã lỗi: ${xhr.status}`;
+                  errorMessage.classList.remove("hidden");
+                }
+              }
+            }, 100);
+          }
+        };
+
+        xhr.onerror = function () {
+          progressContainer.classList.remove("hidden");
+          progressBar.style.width = "100%";
+          progressBar.style.backgroundColor = "#dc2626";
+          progressText.textContent = "Lỗi kết nối!";
+          errorMessage.textContent = "Không thể kết nối đến server.";
+          errorMessage.classList.remove("hidden");
+        };
+
+        xhr.send(formData);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const audioPlayer = document.getElementById("audio-player");
+        const audioSection = document.getElementById("audio-section");
+        const fileInput = document.querySelector('input[type="file"][name="audio_file"]');
+        const transcriptText = document.getElementById("transcript-text");
+
+        // Check if audio_url is provided by server
+        if (audioPlayer.querySelector("source")?.src && audioPlayer.querySelector("source").src !== window.location.href) {
+          audioSection.classList.remove("hidden");
+          audioPlayer.load();
+        }
+
+        // Handle local file selection for preview
+        if (fileInput) {
+          fileInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+              audioSection.classList.add("hidden");
+              audioPlayer.querySelector("source").removeAttribute("src");
+              return;
+            }
+            audioSection.classList.remove("hidden");
+            const url = URL.createObjectURL(file);
+            audioPlayer.querySelector("source").src = url;
+            audioPlayer.load();
+          });
+        }
+
+        // Highlight transcript segments based on audio time
+        audioPlayer.addEventListener("timeupdate", () => {
+          const currentTime = audioPlayer.currentTime;
+          const segments = document.querySelectorAll(".transcript-segment");
+          segments.forEach((segment) => {
+            const startTime = parseFloat(segment.dataset.start);
+            const endTime = parseFloat(segment.dataset.end);
+            if (currentTime >= startTime && currentTime < endTime) {
+              segment.classList.add("highlight");
+              // Scroll to the highlighted segment
+              segment.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            } else {
+              segment.classList.remove("highlight");
+            }
+          });
+        });
+
+        // Reset highlights when audio ends or is paused
+        audioPlayer.addEventListener("ended", () => {
+          document.querySelectorAll(".transcript-segment").forEach((segment) => {
+            segment.classList.remove("highlight");
+          });
+        });
+        audioPlayer.addEventListener("pause", () => {
+          document.querySelectorAll(".transcript-segment").forEach((segment) => {
+            segment.classList.remove("highlight");
+          });
+        });
       });
     </script>
   </body>
