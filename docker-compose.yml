@@ -29,6 +29,7 @@ services:
       - mobifone-network
     volumes:
       - ./instance:/app/instance
+      - ./static:/app/static
 
   # Nginx service
   nginx:
