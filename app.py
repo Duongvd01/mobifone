@@ -443,7 +443,7 @@ def ocr():
 
     # GET
     return render_template(
-        'ocr.html',
+        'OCR.html',
         username=current_user.username,
         history=mongo.db.ocr_history.find({'username': current_user.username}).sort('created_at', -1)
     )
