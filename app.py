@@ -18,19 +18,46 @@ import os
 from datetime import datetime
 import os
 import logging
+from functools import wraps
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = 'secret123'
 app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
 app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
 
+# API key for diagnostic endpoints
+API_KEY = os.environ.get('DIAGNOSTIC_API_KEY', 'default_key_for_development')
+logger.info(f"Diagnostic API key set: {'Yes' if API_KEY != 'default_key_for_development' else 'No (using default)'}")
+
+# API key authentication decorator
+def require_api_key(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        provided_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+        if not provided_key or provided_key != API_KEY:
+            logger.warning(f"Unauthorized access attempt to {request.path} from {request.remote_addr}")
+            return jsonify({"error": "Unauthorized access. Valid API key required."}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Log static file configuration
+logger.info(f"Flask app initialized with static_url_path: {app.static_url_path}")
+logger.info(f"Flask app initialized with static_folder: {app.static_folder}")
+logger.info(f"Flask app absolute static folder path: {os.path.abspath(app.static_folder)}")
+logger.info(f"Current working directory: {os.getcwd()}")
+logger.info(f"Files in static directory: {os.listdir(app.static_folder) if os.path.exists(app.static_folder) else 'Static folder not found'}")
+
 # Folder to save uploaded audio for playback
-UPLOAD_FOLDER = os.path.join(app.static_folder, 'Uploads')
+UPLOAD_FOLDER = os.path.join(app.static_folder, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+logger.info(f"Upload folder path: {UPLOAD_FOLDER}")
+logger.info(f"Upload folder exists: {os.path.exists(UPLOAD_FOLDER)}")
+if os.path.exists(UPLOAD_FOLDER):
+    logger.info(f"Files in upload folder: {os.listdir(UPLOAD_FOLDER)}")
 
 # External Speech-to-Text API endpoint
 API_S2T = "http://180.93.183.64:8502/api/v1/s2t/version2"
@@ -134,6 +161,7 @@ def logout():
 @login_required
 def s2t():
     if request.method == 'POST':
+        logger.info("Processing POST request to /speech-to-text")
         audio_file = request.files.get('audio_file')
         if not audio_file or not audio_file.filename:
             logger.error("No file selected")
@@ -145,7 +173,9 @@ def s2t():
 
         # Validate file extension
         allowed_extensions = {'.mp3', '.wav', '.ogg'}
-        if not os.path.splitext(audio_file.filename)[1].lower() in allowed_extensions:
+        file_ext = os.path.splitext(audio_file.filename)[1].lower()
+        logger.info(f"File extension: {file_ext}")
+        if not file_ext in allowed_extensions:
             logger.error(f"Invalid file extension: {audio_file.filename}")
             return jsonify({
                 'error': 'Định dạng file không được hỗ trợ. Vui lòng chọn file .mp3, .wav hoặc .ogg.',
@@ -156,9 +186,10 @@ def s2t():
         # Save file
         filename = secure_filename(audio_file.filename)
         save_path = os.path.join(UPLOAD_FOLDER, filename)
+        logger.info(f"Attempting to save file to: {save_path}")
         try:
             audio_file.save(save_path)
-            logger.debug(f"File saved to {save_path}")
+            logger.info(f"File saved successfully to {save_path}")
         except Exception as e:
             logger.error(f"Failed to save file: {e}")
             return jsonify({
@@ -175,12 +206,16 @@ def s2t():
                 'transcript': None,
                 'audio_url': None
             }), 500
+        else:
+            logger.info(f"File exists at {save_path}, size: {os.path.getsize(save_path)} bytes")
 
         # STT API call
         try:
             with open(save_path, 'rb') as f:
                 files = {'file': (filename, f, audio_file.mimetype)}
+                logger.info(f"Sending file to API with mimetype: {audio_file.mimetype}")
                 resp = requests.post(API_S2T, files=files, data={'url': 'string'})
+            logger.info(f"API response status code: {resp.status_code}")
             if resp.status_code == 200:
                 api_response = resp.json()
                 transcript_blocks = api_response.get('data', {}).get('transcript', [])
@@ -204,7 +239,7 @@ def s2t():
                 logger.debug(f"Transcript data: {transcript_data}")
             else:
                 transcript_data = [{'text': f"Lỗi API: {resp.status_code}", 'start_time': 0, 'end_time': 0, 'speaker': 'Unknown', 'words': []}]
-                logger.error(f"API error: {resp.status_code}")
+                logger.error(f"API error: {resp.status_code}, response: {resp.text}")
         except Exception as e:
             transcript_data = [{'text': f"Lỗi hệ thống: {str(e)}", 'start_time': 0, 'end_time': 0, 'speaker': 'Unknown', 'words': []}]
             logger.error(f"API call failed: {e}")
@@ -227,8 +262,17 @@ def s2t():
             }), 500
 
         # Build playback URL
-        audio_url = url_for('static', filename=f'Uploads/{filename}', _external=True)
-        logger.debug(f"Audio URL: {audio_url}")
+        audio_url = url_for('static', filename=f'uploads/{filename}', _external=True)
+        logger.info(f"Generated audio URL: {audio_url}")
+        
+        # Check if the file is accessible via the URL
+        try:
+            test_path = os.path.join(app.static_folder, f'uploads/{filename}')
+            logger.info(f"Testing file accessibility at path: {test_path}")
+            logger.info(f"File exists at test path: {os.path.exists(test_path)}")
+            logger.info(f"File permissions: {oct(os.stat(test_path).st_mode)[-3:]}" if os.path.exists(test_path) else "File not found")
+        except Exception as e:
+            logger.error(f"Error checking file accessibility: {e}")
 
         return jsonify({
             'transcript': transcript_data,
@@ -388,7 +432,7 @@ def ocr():
             }), 500
 
         # Build file URL
-        file_url = url_for('static', filename=f'Uploads/{filename}', _external=True)
+        file_url = url_for('static', filename=f'uploads/{filename}', _external=True)
         logger.debug(f"File URL: {file_url}")
 
         return jsonify({
@@ -403,9 +447,84 @@ def ocr():
         username=current_user.username,
         history=mongo.db.ocr_history.find({'username': current_user.username}).sort('created_at', -1)
     )
+@app.route('/test-static')
+@require_api_key
+def test_static():
+    """Diagnostic route to test static file access"""
+    logger.info("Test static route accessed")
+    
+    # Check static folder
+    static_exists = os.path.exists(app.static_folder)
+    logger.info(f"Static folder exists: {static_exists}")
+    
+    # List files in static folder
+    static_files = os.listdir(app.static_folder) if static_exists else []
+    logger.info(f"Files in static folder: {static_files}")
+    
+    # Check uploads folder
+    uploads_path = os.path.join(app.static_folder, 'uploads')
+    uploads_exists = os.path.exists(uploads_path)
+    logger.info(f"Uploads folder exists: {uploads_exists}")
+    
+    # List files in uploads folder
+    upload_files = os.listdir(uploads_path) if uploads_exists else []
+    logger.info(f"Files in uploads folder: {upload_files}")
+    
+    # Generate test URLs
+    test_urls = []
+    for file in upload_files:
+        url = url_for('static', filename=f'uploads/{file}', _external=True)
+        test_urls.append({'file': file, 'url': url})
+    
+    # Return diagnostic info
+    return jsonify({
+        'static_folder': app.static_folder,
+        'static_url_path': app.static_url_path,
+        'static_exists': static_exists,
+        'static_files': static_files,
+        'uploads_exists': uploads_exists,
+        'upload_files': upload_files,
+        'test_urls': test_urls
+    })
+
+@app.route('/test-nginx')
+@require_api_key
+def test_nginx():
+    """Test route to diagnose Nginx proxy configuration"""
+    logger.info("Test Nginx route accessed")
+    
+    # Get request headers
+    headers = {k: v for k, v in request.headers.items()}
+    logger.info(f"Request headers: {headers}")
+    
+    # Check if request came through Nginx
+    proxied = 'X-Forwarded-For' in headers or 'X-Real-IP' in headers
+    logger.info(f"Request appears to be proxied: {proxied}")
+    
+    # Get server environment
+    env_info = {
+        'hostname': os.uname().nodename if hasattr(os, 'uname') else 'Unknown',
+        'server_software': request.environ.get('SERVER_SOFTWARE', 'Unknown'),
+        'wsgi_env': {k: v for k, v in request.environ.items() if k.startswith('wsgi.')},
+        'flask_env': app.config.get('ENV', 'Unknown'),
+        'request_scheme': request.scheme,
+        'request_host': request.host,
+        'request_url': request.url,
+        'remote_addr': request.remote_addr
+    }
+    logger.info(f"Server environment: {env_info}")
+    
+    return jsonify({
+        'headers': headers,
+        'proxied': proxied,
+        'env_info': env_info,
+        'static_url_path': app.static_url_path,
+        'static_folder': app.static_folder
+    })
 # Error handlers
 @app.errorhandler(404)
 def not_found_error(error):
+    logger.error(f"404 error: {request.url}")
     return render_template('404.html'), 404
 
 @app.errorhandler(500)

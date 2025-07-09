@@ -23,6 +23,7 @@ services:
     environment:
       - FLASK_ENV=production
       - MONGO_URI=mongodb://mongodb:27017/flaskauth
+      - DIAGNOSTIC_API_KEY=${DIAGNOSTIC_API_KEY:-secure_diagnostic_key_123}
     depends_on:
       - mongodb
     networks:
