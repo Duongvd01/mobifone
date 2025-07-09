@@ -23,6 +23,12 @@ services:
       - FLASK_ENV=production
       - MONGO_URI=mongodb://mongodb:27017/flaskauth
       - DIAGNOSTIC_API_KEY=${DIAGNOSTIC_API_KEY:-secure_diagnostic_key_123}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       - mongodb
     networks:
@@ -45,7 +51,8 @@ services:
       - ./infrastructure/nginx/mime.types:/etc/nginx/mime.types
       - /etc/ssl/mobifone_ai.pem:/etc/ssl/mobifone_ai.pem
     depends_on:
-      - flask-app
+      flask-app:
+        condition: service_healthy
     networks:
       - mobifone-network
 
