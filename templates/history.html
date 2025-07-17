@@ -2,13 +2,10 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lịch sử Transcript - Mobifone</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     body {
       background: linear-gradient(135deg, #004e92, #000428);
@@ -38,6 +35,29 @@
         transform: translateX(0);
       }
     }
+    .highlight {
+      background-color: #facc15 !important;
+      color: #1f2937 !important;
+      padding: 2px 4px !important;
+      border-radius: 3px !important;
+      display: inline-block !important;
+    }
+    .transcript-segment {
+      margin-right: 4px;
+      cursor: pointer;
+    }
+    .history-item {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid #4b5563;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .error-message {
+      color: #dc2626;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+    }
   </style>
 </head>
 
@@ -45,7 +65,7 @@
   <!-- Sidebar -->
   <div class="sidebar fixed top-0 left-0 h-screen w-64 p-6 z-50" id="sidebar">
     <div class="logo mb-4">
-      <img src="/static/Logo_MBF.png" alt="Mobifone Logo" style="height: 40px;" />
+      <img src="{{ url_for('static', filename='Logo_MBF.png') }}" alt="Mobifone Logo" style="height: 40px;" />
     </div>
     <h2 class="text-lg font-semibold text-blue-200 mb-6">Xin chào, {{ username }} 👋</h2>
     <nav>
@@ -71,17 +91,34 @@
         <i class="fas fa-sign-out-alt"></i> Đăng xuất
       </a>
     </nav>
+    <button class="md:hidden absolute top-4 right-4 text-white" onclick="toggleSidebar()">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
   </div>
 
   <!-- Main Content -->
   <div class="flex-1 ml-0 md:ml-64 p-6 transition-all duration-300">
     <h2 class="text-2xl font-bold text-blue-200 mb-6">🕘 Lịch sử Transcript</h2>
+    <div class="flex gap-4 mb-4">
+
+    </div>
 
     {% for item in history %}
-    <div class="bg-white/10 border border-gray-700 p-4 rounded-lg mb-4 shadow-md">
+    <div class="history-item" data-index="{{ loop.index0 }}">
       <p class="text-gray-300"><strong>📁 File:</strong> {{ item.filename }}</p>
       <p class="text-sm text-gray-400"><strong>📅 Ngày:</strong> {{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-      <pre class="whitespace-pre-wrap text-gray-200 bg-gray-800/30 p-3 rounded mt-2">{{ item.transcript }}</pre>
+    
+      <p class="error-message hidden" data-index="{{ loop.index0 }}"></p>
+      <div class="whitespace-pre-wrap text-gray-200 bg-gray-800/30 p-3 rounded mt-2 transcript-text" data-index="{{ loop.index0 }}">
+        {% for segment in item.transcript %}
+          <span class="transcript-segment" data-start="{{ segment.start_time }}" data-end="{{ segment.end_time }}">[{{ segment.start_time }}s] {{ segment.text }} </span>
+        {% endfor %}
+      </div>
+      <button type="button" onclick="deleteHistory('{{ item._id }}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition duration-200 mt-2">
+        🗑 Xóa
+      </button>
     </div>
     {% else %}
     <p class="text-gray-400">Không có lịch sử.</p>
@@ -97,6 +134,242 @@
       if (window.innerWidth <= 768 && !sidebar.contains(event.target)) {
         sidebar.classList.remove("open");
       }
+    });
+
+    function debugAudio() {
+      const audios = document.querySelectorAll("audio");
+      audios.forEach((audio, idx) => {
+        const index = audio.dataset.index;
+        console.log(`Debug Audio ${index}: src=${audio.currentSrc}, duration=${audio.duration || 'N/A'}, paused=${audio.paused}, currentTime=${audio.currentTime}, readyState=${audio.readyState}, error=${audio.error ? audio.error.message : 'none'}`);
+        const transcriptText = document.querySelector(`.transcript-text[data-index="${index}"]`);
+        if (transcriptText) {
+          const segments = transcriptText.querySelectorAll(".transcript-segment");
+          console.log(`Transcript ${index} has ${segments.length} segments`);
+          segments.forEach((segment, segIdx) => {
+            console.log(`Segment ${segIdx}: text="${segment.textContent}", start=${segment.dataset.start}, end=${segment.dataset.end}, highlighted=${segment.classList.contains('highlight')}`);
+          });
+        } else {
+          console.warn(`No transcript-text for index ${index}`);
+        }
+      });
+    }
+
+    function checkAudioUrls() {
+      const audios = document.querySelectorAll("audio");
+      audios.forEach((audio) => {
+        const index = audio.dataset.index;
+        const url = audio.currentSrc || audio.querySelector("source").src;
+        console.log(`Checking URL for audio ${index}: ${url}`);
+        fetch(url, { method: "HEAD" })
+          .then((response) => {
+            const errorMessage = document.querySelector(`.error-message[data-index="${index}"]`);
+            if (response.ok) {
+              console.log(`Audio URL ${index} is accessible: ${url}`);
+              errorMessage.classList.add("hidden");
+              errorMessage.textContent = "";
+            } else {
+              console.error(`Audio URL ${index} failed: ${response.status}`);
+              errorMessage.textContent = `Lỗi: Không thể truy cập file âm thanh (${response.status})`;
+              errorMessage.classList.remove("hidden");
+            }
+          })
+          .catch((error) => {
+            console.error(`Audio URL ${index} error: ${error.message}`);
+            const errorMessage = document.querySelector(`.error-message[data-index="${index}"]`);
+            errorMessage.textContent = `Lỗi: Không thể kết nối đến file âm thanh (${error.message})`;
+            errorMessage.classList.remove("hidden");
+          });
+      });
+    }
+
+    function preloadAllAudio() {
+      const audios = document.querySelectorAll("audio");
+      audios.forEach((audio) => {
+        const index = audio.dataset.index;
+        audio.load();
+        console.log(`Preloaded audio index ${index}, src: ${audio.currentSrc}`);
+      });
+    }
+
+    function deleteHistory(id) {
+      if (confirm("Bạn có chắc muốn xóa bản ghi này?")) {
+        fetch(`/delete-history/${id}`, { method: "DELETE" })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              console.log(`Deleted history item ${id}`);
+              location.reload();
+            } else {
+              alert(`Lỗi khi xóa: ${data.error}`);
+            }
+          })
+          .catch((error) => {
+            console.error("Delete error:", error);
+            alert("Lỗi khi xóa bản ghi!");
+          });
+      }
+    }
+
+    // Ensure only one audio plays at a time
+    document.addEventListener("play", (e) => {
+      if (e.target.tagName === "AUDIO") {
+        const index = e.target.dataset.index;
+        console.log(`Audio index ${index} started playing, src: ${e.target.currentSrc}`);
+        document.querySelectorAll("audio").forEach((audio) => {
+          if (audio !== e.target) {
+            audio.pause();
+            audio.currentTime = 0;
+            console.log(`Paused audio index ${audio.dataset.index}`);
+          }
+        });
+      }
+    }, true);
+
+    // Highlight transcript segments
+    function updateHighlight(audio) {
+      if (audio.tagName !== "AUDIO" || audio.paused) return;
+      const index = audio.dataset.index;
+      const currentTime = audio.currentTime;
+      console.log(`Audio index ${index} timeupdate, currentTime: ${currentTime}, paused: ${audio.paused}, duration: ${audio.duration || 'N/A'}, src: ${audio.currentSrc}`);
+      const transcriptText = document.querySelector(`.transcript-text[data-index="${index}"]`);
+      if (!transcriptText) {
+        console.warn(`No transcript-text found for index ${index}`);
+        return;
+      }
+      const segments = transcriptText.querySelectorAll(".transcript-segment");
+      if (segments.length === 0) {
+        console.warn(`No segments found for transcript-text index ${index}`);
+        return;
+      }
+      let highlighted = false;
+      segments.forEach((segment, segIndex) => {
+        const startTime = parseFloat(segment.dataset.start);
+        const endTime = parseFloat(segment.dataset.end);
+        console.log(`Segment ${segIndex}: text="${segment.textContent}", start=${startTime}, end=${endTime}`);
+        if (isNaN(startTime) || isNaN(endTime)) {
+          console.warn(`Invalid segment times for index ${index}, segment ${segIndex}`);
+          return;
+        }
+        if (currentTime >= startTime && currentTime < endTime) {
+          segment.classList.add("highlight");
+          console.log(`Applied highlight to segment ${segIndex}, computed style: ${window.getComputedStyle(segment).backgroundColor}`);
+          segment.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          highlighted = true;
+        } else {
+          segment.classList.remove("highlight");
+        }
+      });
+      if (!highlighted) {
+        console.log(`No segment highlighted for index ${index} at time ${currentTime}`);
+      }
+      requestAnimationFrame(() => updateHighlight(audio));
+    }
+
+    document.addEventListener("play", (e) => {
+      if (e.target.tagName === "AUDIO") {
+        requestAnimationFrame(() => updateHighlight(e.target));
+      }
+    }, true);
+
+    // Reset highlights when audio ends or pauses
+    document.addEventListener("ended", (e) => {
+      if (e.target.tagName === "AUDIO") {
+        const index = e.target.dataset.index;
+        console.log(`Audio index ${index} ended`);
+        const transcriptText = document.querySelector(`.transcript-text[data-index="${index}"]`);
+        if (transcriptText) {
+          transcriptText.querySelectorAll(".transcript-segment").forEach((segment) => {
+            segment.classList.remove("highlight");
+          });
+        }
+      }
+    }, true);
+
+    document.addEventListener("pause", (e) => {
+      if (e.target.tagName === "AUDIO") {
+        const index = e.target.dataset.index;
+        console.log(`Audio index ${index} paused`);
+        const transcriptText = document.querySelector(`.transcript-text[data-index="${index}"]`);
+        if (transcriptText) {
+          transcriptText.querySelectorAll(".transcript-segment").forEach((segment) => {
+            segment.classList.remove("highlight");
+          });
+        }
+      }
+    }, true);
+
+    // Click segment to seek audio with retry
+    function tryPlayAudio(audio, startTime, index, retries = 3, delay = 500) {
+      if (audio.readyState >= 2) {
+        audio.currentTime = startTime;
+        audio.play().catch((e) => {
+          console.error(`Audio play error for index ${index}: ${e.message}`);
+          const errorMessage = document.querySelector(`.error-message[data-index="${index}"]`);
+          errorMessage.textContent = `Lỗi phát âm thanh: ${e.message}`;
+          errorMessage.classList.remove("hidden");
+        });
+      } else if (retries > 0) {
+        console.warn(`Audio index ${index} not ready, readyState: ${audio.readyState}, retries left: ${retries}`);
+        audio.load();
+        setTimeout(() => tryPlayAudio(audio, startTime, index, retries - 1, delay), delay);
+      } else {
+        console.error(`Audio index ${index} failed after retries, readyState: ${audio.readyState}`);
+        const errorMessage = document.querySelector(`.error-message[data-index="${index}"]`);
+        errorMessage.textContent = `Lỗi: File âm thanh không sẵn sàng sau nhiều lần thử`;
+        errorMessage.classList.remove("hidden");
+      }
+    }
+
+    document.addEventListener("click", (e) => {
+      if (e.target.classList.contains("transcript-segment")) {
+        e.preventDefault();
+        const index = e.target.parentElement.dataset.index;
+        const startTime = parseFloat(e.target.dataset.start);
+        console.log(`Clicked segment: ${e.target.textContent}, start: ${startTime}, index: ${index}`);
+        const audio = document.querySelector(`audio[data-index="${index}"]`);
+        if (!audio) {
+          console.error(`No audio element found for index ${index}`);
+          const errorMessage = document.querySelector(`.error-message[data-index="${index}"]`);
+          errorMessage.textContent = `Lỗi: Không tìm thấy phần tử audio`;
+          errorMessage.classList.remove("hidden");
+          return;
+        }
+        // Pause and reset other audios
+        document.querySelectorAll("audio").forEach((otherAudio) => {
+          if (otherAudio !== audio) {
+            otherAudio.pause();
+            otherAudio.currentTime = 0;
+          }
+        });
+        tryPlayAudio(audio, startTime, index);
+      }
+    });
+
+    // Log audio metadata and errors
+    document.addEventListener("loadedmetadata", (e) => {
+      if (e.target.tagName === "AUDIO") {
+        const index = e.target.dataset.index;
+        console.log(`Audio index ${index} metadata loaded, duration: ${e.target.duration}, src: ${e.target.currentSrc}`);
+        const errorMessage = document.querySelector(`.error-message[data-index="${index}"]`);
+        errorMessage.classList.add("hidden");
+        errorMessage.textContent = "";
+      }
+    }, true);
+
+    document.addEventListener("error", (e) => {
+      if (e.target.tagName === "AUDIO") {
+        const index = e.target.dataset.index;
+        console.error(`Audio index ${index} error: ${e.target.error ? e.target.error.message : 'Unknown error'}`);
+        const errorMessage = document.querySelector(`.error-message[data-index="${index}"]`);
+        errorMessage.textContent = `Lỗi tải âm thanh: ${e.target.error ? e.target.error.message : 'Unknown error'}`;
+        errorMessage.classList.remove("hidden");
+      }
+    }, true);
+
+    // Log segment count and preload on load
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("Transcript segments:", document.querySelectorAll(".transcript-segment").length);
+      checkAudioUrls();
     });
   </script>
 </body>

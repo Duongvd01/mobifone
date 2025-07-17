@@ -28,7 +28,7 @@ app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = 'secret123'
 app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
 app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
-
+# app.config['MONGO_URI'] = 'mongodb://localhost:27017/flaskauth'
 # API key for diagnostic endpoints
 API_KEY = os.environ.get('DIAGNOSTIC_API_KEY', 'default_key_for_development')
 logger.info(f"Diagnostic API key set: {'Yes' if API_KEY != 'default_key_for_development' else 'No (using default)'}")
@@ -294,7 +294,27 @@ def history():
     user_history = mongo.db.transcripts.find({"username": current_user.username}).sort("created_at", -1)
     return render_template("history.html", history=user_history)
 
-
+@app.route('/delete-history/<string:id>', methods=['DELETE'])
+@login_required
+def delete_history(id):
+    try:
+        item = mongo.db.transcripts.find_one({"_id": ObjectId(id), "username": current_user.username})
+        if not item:
+            logger.error(f"History item not found or unauthorized: {id}")
+            return jsonify({"success": False, "error": "Bản ghi không tồn tại hoặc không có quyền xóa."}), 404
+        # Delete audio file
+        file_path = os.path.join(UPLOAD_FOLDER, item['filename'])
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            logger.debug(f"Deleted file: {file_path}")
+        # Delete from database
+        mongo.db.transcripts.delete_one({"_id": ObjectId(id)})
+        logger.debug(f"Deleted history item: {id}")
+        return jsonify({"success": True})
+    except Exception as e:
+        logger.error(f"Error deleting history item {id}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    
 @app.route("/chatbot", methods=["GET", "POST"])
 @login_required
 def chatbot():
@@ -537,3 +557,5 @@ def forbidden_error(error):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=os.environ.get('FLASK_ENV') == 'development')
+# if __name__ == '__main__':
+#     app.run(debug=True)
