@@ -27,7 +27,10 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = 'secret123'
 app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
-app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
+# DEV MODE: Nếu chạy app bên ngoài Docker, hãy export biến môi trường sau:
+#   MONGO_URI=mongodb://localhost:27017/flaskauth
+# hoặc chỉnh app.config['MONGO_URI'] cho phù hợp.
+# Khi đó, chỉ cần chạy: docker compose up dev
 
 # API key for diagnostic endpoints
 API_KEY = os.environ.get('DIAGNOSTIC_API_KEY', 'default_key_for_development')

@@ -56,6 +56,31 @@ services:
     networks:
       - mobifone-network
 
+  # Development only: MongoDB exposed for local dev
+  mongodb-dev:
+    image: mongo:7.0
+    container_name: mobifone-mongodb-dev
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: flaskauth
+    ports:
+      - "27017:27017"  # Expose default MongoDB port for local dev
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mobifone-network
+
+  # Development only: placeholder for dev mode
+  dev:
+    image: busybox
+    container_name: mobifone-dev-placeholder
+    command: tail -f /dev/null
+    depends_on:
+      - mongodb-dev
+    networks:
+      - mobifone-network
+    # No ports, just a placeholder to allow `docker compose up dev` to start only db
+
 volumes:
   mongodb_data:
 

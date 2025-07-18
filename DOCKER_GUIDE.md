@@ -79,3 +79,55 @@ docker-compose up flask-app
 docker-compose down -v
 docker-compose up --build
 ``` 
+
+# Hướng dẫn chạy chế độ Development (DEV)
+
+## 1. Chạy MongoDB bằng Docker Compose
+
+Chỉ cần chạy MongoDB, không chạy Flask app và Nginx:
+
+```bash
+docker compose up dev
+```
+- Lệnh này sẽ chỉ khởi động service `mongodb-dev` (MongoDB) và một container placeholder.
+- MongoDB sẽ được bind ra port `27017` trên máy host.
+
+## 2. Chạy Flask app ở ngoài Docker
+
+- Đảm bảo bạn đã cài Python và các package cần thiết:
+  ```bash
+  pip install -r requirements.txt
+  ```
+- Đặt biến môi trường để Flask app kết nối tới MongoDB vừa khởi động:
+  - **Windows (cmd):**
+    ```cmd
+    set MONGO_URI=mongodb://localhost:27017/flaskauth
+    ```
+  - **Windows (PowerShell):**
+    ```powershell
+    $env:MONGO_URI = "mongodb://localhost:27017/flaskauth"
+    ```
+  - **Linux/macOS (bash):**
+    ```bash
+    export MONGO_URI=mongodb://localhost:27017/flaskauth
+    ```
+- Chạy Flask app:
+  ```bash
+  python app.py
+  ```
+
+## 3. Lợi ích chế độ dev
+- Có thể sửa code Flask và reload nhanh mà không cần rebuild Docker.
+- Dữ liệu MongoDB vẫn được lưu trong volume docker.
+- Có thể dùng các công cụ debug, IDE, v.v. trực tiếp trên máy local.
+
+## 4. Khi chuyển sang production
+- Dùng lại lệnh:
+  ```bash
+  docker compose up
+  ```
+- Lúc này sẽ chạy đầy đủ cả MongoDB, Flask app và Nginx reverse proxy.
+
+---
+
+Nếu gặp lỗi kết nối database, kiểm tra lại biến môi trường `MONGO_URI` và chắc chắn MongoDB đã chạy ở port 27017. 
