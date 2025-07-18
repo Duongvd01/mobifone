@@ -50,6 +50,7 @@ services:
       - ./infrastructure/nginx/mobistt.mobifone.ai.conf:/etc/nginx/conf.d/default.conf
       - ./infrastructure/nginx/mime.types:/etc/nginx/mime.types
       - /etc/ssl/mobifone_ai.pem:/etc/ssl/mobifone_ai.pem
+      - /etc/ssl/mobifone.pem:/etc/ssl/mobifone.pem
     depends_on:
       flask-app:
         condition: service_healthy
