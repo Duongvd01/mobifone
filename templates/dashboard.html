@@ -11,20 +11,35 @@
     />
     <style>
       body {
-        background: linear-gradient(135deg, #004e92, #000428);
+        background: linear-gradient(135deg, #1e3a8a, #111827);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         min-height: 100vh;
-        margin: 0;
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        color: #f3f4f6;
       }
       .sidebar {
         transition: transform 0.3s ease-in-out;
-        backdrop-filter: blur(10px);
-        background: rgba(31, 41, 55, 0.95);
+        background: rgba(17, 24, 39, 0.98);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       }
       .sidebar a {
-        display: flex;
-        align-items: center;
-        gap: 10px;
+        transition: all 0.2s ease-in-out;
+      }
+      .sidebar a:hover {
+        background: #3b82f6;
+        transform: translateX(4px);
+      }
+      .sidebar a.active {
+        background: #2563eb;
+        color: white;
+        transform: translateX(4px);
+      }
+      .service-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+      }
+      .service-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
       }
       @media (max-width: 768px) {
         .sidebar {
@@ -33,190 +48,111 @@
         .sidebar.open {
           transform: translateX(0);
         }
-      }
-      .service-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-      .service-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0, 209, 255, 0.2);
+        .md\:ml-64 {
+          margin-left: 0;
+        }
       }
     </style>
   </head>
-  <body class="flex text-white">
-    <!-- Sidebar Menu -->
-    <div
-      class="sidebar fixed top-0 left-0 h-screen bg-gray-800 w-64 p-6 z-50"
-      id="sidebar"
-    >
-      <div class="logo mb-4">
-        <img
-          src="static\Logo_MBF.png"
-          alt="Mobifone Logo"
-          style="height: 40px; vertical-align: middle"
-        />
+  <body class="flex">
+    <!-- Sidebar -->
+    <div class="sidebar fixed top-0 left-0 h-screen w-64 p-6 z-50" id="sidebar">
+      <div class="logo mb-6">
+        <img src="{{ url_for('static', filename='Logo_MBF.png') }}" alt="Mobifone Logo" class="h-10" />
       </div>
-      <h2 class="text-lg font-semibold text-blue-200 mb-6">
-        Xin chào, {{ username }} 👋
-      </h2>
-      <nav>
-        <a
-          href="#"
-          class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded transition duration-200"
-        >
+      <h2 class="text-xl font-bold text-blue-200 mb-8">Xin chào, {{ username }} 👋</h2>
+      <nav class="space-y-2">
+        <a href="/dashboard" class="flex items-center gap-3 py-3 px-4 text-white bg-blue-600 rounded-lg active">
           <i class="fas fa-home"></i> Dashboard
         </a>
-        <a
-          href="{{ url_for('s2t') }}"
-          class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded transition duration-200"
-        >
+        <a href="/speech-to-text" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg">
           <i class="fas fa-microphone"></i> Speech-to-Text
         </a>
-        <a
-          href="/chatbot"
-          class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded transition duration-200"
-        >
+        <a href="/chatbot" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg">
           <i class="fas fa-robot"></i> Chatbot
         </a>
-        <a
-          href="/ocr"
-          class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded transition duration-200"
-        >
+        <a href="/ocr" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg">
           <i class="fas fa-file-image"></i> OCR
         </a>
-        <a
-          href="/text-to-speech"
-          class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded transition duration-200"
-        >
+        <a href="/text-to-speech" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg">
           <i class="fas fa-volume-up"></i> Text to Speech
         </a>
-        <a
-          href="http://127.0.0.1:5000/history"
-          class="block py-3 px-4 text-gray-300 hover:bg-blue-600 rounded transition duration-200"
-          onclick="toggleHistory()"
-        >
+        <a href="/history" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg" onclick="toggleHistory()">
           <i class="fas fa-history"></i> Lịch sử
         </a>
-        <a
-          href="{{ url_for('logout') }}"
-          class="block py-3 px-4 text-gray-300 hover:bg-red-600 rounded transition duration-200 mt-4"
-        >
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-red-600 rounded-lg mt-4">
           <i class="fas fa-sign-out-alt"></i> Đăng xuất
         </a>
       </nav>
-      <button
-        class="md:hidden absolute top-4 right-4 text-white"
-        onclick="toggleSidebar()"
-      >
-        <svg
-          class="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          ></path>
+      <button class="md:hidden absolute top-4 right-4 text-white" onclick="toggleSidebar()">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </button>
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 ml-0 md:ml-64 p-6 transition-all duration-300">
-      <!-- Speech-to-Text Section -->
-
-      <!-- Services Section -->
-      <div class="bg-white/10 p-6 rounded-lg shadow-lg mb-6">
-        <h2 class="text-2xl font-bold text-blue-200 mb-4">Dịch vụ nổi bật</h2>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div
-            class="service-card bg-white/5 p-4 rounded-lg border border-blue-500/30"
-            id="chatbot"
-          >
-            <h3 class="text-xl font-semibold text-blue-300 mb-2">Chatbot</h3>
-            <p class="text-gray-300">
-              Trợ lý ảo thông minh hỗ trợ tự động hóa giao tiếp, trả lời khách
-              hàng 24/7.
-            </p>
-          </div>
-          <div
-            class="service-card bg-white/5 p-4 rounded-lg border border-blue-500/30"
-            id="speech-to-text"
-          >
-            <h3 class="text-xl font-semibold text-blue-300 mb-2">
-              Speech-to-Text
-            </h3>
-            <p class="text-gray-300">
-              Công nghệ chuyển đổi giọng nói thành văn bản chính xác, hỗ trợ đa
-              ngôn ngữ.
-            </p>
-          </div>
-          <div
-            class="service-card bg-white/5 p-4 rounded-lg border border-blue-500/30"
-            id="text-to-speech"
-          >
-            <h3 class="text-xl font-semibold text-blue-300 mb-2">
-              Text to Speech
-            </h3>
-            <p class="text-gray-300">
-              Chuyển văn bản thành giọng nói tự nhiên, hỗ trợ nhiều ngôn ngữ và
-              giọng điệu.
-            </p>
-          </div>
-          <div
-            class="service-card bg-white/5 p-4 rounded-lg border border-blue-500/30"
-            id="ocr"
-          >
-            <h3 class="text-xl font-semibold text-blue-300 mb-2">OCR</h3>
-            <p class="text-gray-300">
-              Nhận diện và trích xuất văn bản từ hình ảnh, tài liệu nhanh chóng
-              và chính xác.
-            </p>
+    <div class="flex-1 md:ml-64 p-6 flex flex-col">
+      <h1 class="text-2xl font-bold text-blue-200 mb-6">Dashboard Quản Lý Dịch Vụ</h1>
+      <div class="bg-gray-900 rounded-lg p-6 shadow-lg space-y-6">
+        <!-- Services Section -->
+        <div>
+          <h2 class="text-xl font-semibold text-blue-300 mb-4">Dịch vụ nổi bật</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="service-card bg-gray-800 p-4 rounded-lg border border-blue-500/30" onclick="window.location.href='/chatbot'">
+              <div class="flex items-center gap-3 mb-2">
+                <i class="fas fa-robot text-blue-400 text-2xl"></i>
+                <h3 class="text-lg font-semibold text-blue-300">Chatbot</h3>
+              </div>
+              <p class="text-gray-400 text-sm">Trợ lý ảo thông minh hỗ trợ tự động hóa giao tiếp, trả lời khách hàng 24/7.</p>
+            </div>
+            <div class="service-card bg-gray-800 p-4 rounded-lg border border-blue-500/30" onclick="window.location.href='/speech-to-text'">
+              <div class="flex items-center gap-3 mb-2">
+                <i class="fas fa-microphone text-blue-400 text-2xl"></i>
+                <h3 class="text-lg font-semibold text-blue-300">Speech-to-Text</h3>
+              </div>
+              <p class="text-gray-400 text-sm">Chuyển đổi giọng nói thành văn bản chính xác, hỗ trợ đa ngôn ngữ.</p>
+            </div>
+            <div class="service-card bg-gray-800 p-4 rounded-lg border border-blue-500/30" onclick="window.location.href='/text-to-speech'">
+              <div class="flex items-center gap-3 mb-2">
+                <i class="fas fa-volume-up text-blue-400 text-2xl"></i>
+                <h3 class="text-lg font-semibold text-blue-300">Text to Speech</h3>
+              </div>
+              <p class="text-gray-400 text-sm">Chuyển văn bản thành giọng nói tự nhiên, hỗ trợ nhiều giọng điệu.</p>
+            </div>
+            <div class="service-card bg-gray-800 p-4 rounded-lg border border-blue-500/30" onclick="window.location.href='/ocr'">
+              <div class="flex items-center gap-3 mb-2">
+                <i class="fas fa-file-image text-blue-400 text-2xl"></i>
+                <h3 class="text-lg font-semibold text-blue-300">OCR</h3>
+              </div>
+              <p class="text-gray-400 text-sm">Nhận diện và trích xuất văn bản từ hình ảnh, tài liệu nhanh chóng.</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Main Dashboard Content -->
-      <div class="bg-white/10 p-6 rounded-lg shadow-lg">
-        <h2 class="text-3xl font-bold mb-6 text-blue-200">Quản lý dịch vụ</h2>
-        <p class="text-gray-300">
-          Chào mừng bạn đến với dashboard quản lý các dịch vụ của Mobifone. Vui
-          lòng chọn một dịch vụ từ menu để bắt đầu.
-        </p>
+        <!-- Welcome Section -->
+        <div>
+          <h2 class="text-xl font-semibold text-blue-300 mb-4">Chào mừng bạn</h2>
+          <p class="text-gray-400">
+            Chào mừng bạn đến với dashboard quản lý các dịch vụ của Mobifone. 
+            Chọn một dịch vụ từ menu hoặc thẻ bên trên để bắt đầu sử dụng.
+          </p>
+        </div>
       </div>
     </div>
 
     <script>
-      function toggleHistory() {
-        const historySection = document.getElementById("history-section");
-        historySection.classList.toggle("hidden");
-      }
-
       function toggleSidebar() {
-        const sidebar = document.getElementById("sidebar");
-        sidebar.classList.toggle("open");
+        document.getElementById("sidebar").classList.toggle("open");
       }
 
-      // Smooth scroll to section
-      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-        anchor.addEventListener("click", function (e) {
-          e.preventDefault();
-          const target = document.querySelector(this.getAttribute("href"));
-          if (target) {
-            target.scrollIntoView({ behavior: "smooth" });
-          }
-        });
-      });
+      function toggleHistory() {
+        window.location.href = "/history";
+      }
 
-      // Close sidebar when clicking outside on mobile
-      document.addEventListener("click", function (event) {
+      document.addEventListener("click", (event) => {
         const sidebar = document.getElementById("sidebar");
-        const isClickInside = sidebar.contains(event.target);
-        if (window.innerWidth <= 768 && !isClickInside) {
+        if (window.innerWidth <= 768 && !sidebar.contains(event.target)) {
           sidebar.classList.remove("open");
         }
       });

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Text to Speech - Mobifone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #1e3a8a, #111827);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        min-height: 100vh;
+        color: #f3f4f6;
+      }
+      .sidebar {
+        transition: transform 0.3s ease-in-out;
+        background: rgba(17, 24, 39, 0.98);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+      .sidebar a {
+        transition: all 0.2s ease-in-out;
+      }
+      .sidebar a:hover {
+        background: #3b82f6;
+        transform: translateX(4px);
+      }
+      .sidebar a.active {
+        background: #2563eb;
+        color: white;
+        transform: translateX(4px);
+      }
+      textarea:focus, select:focus {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+      }
+      .audio-player {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: #1f2937;
+        padding: 1rem;
+        border-radius: 0.5rem;
+      }
+      .progress-bar {
+        flex: 1;
+        height: 0.5rem;
+        background: #4b5563;
+        border-radius: 0.25rem;
+        overflow: hidden;
+      }
+      .progress {
+        width: 0;
+        height: 100%;
+        background: #3b82f6;
+        transition: width 0.1s linear;
+      }
+      @media (max-width: 768px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+        .sidebar.open {
+          transform: translateX(0);
+        }
+        .md\:ml-64 {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="flex">
+    <!-- Sidebar -->
+    <div class="sidebar fixed top-0 left-0 h-screen w-64 p-6 z-50" id="sidebar">
+      <div class="logo mb-6">
+        <img src="/static/Logo_MBF.png" alt="Mobifone Logo" class="h-10" />
+      </div>
+      <h2 class="text-xl font-bold text-blue-200 mb-8">Xin chào, {{ username }} 👋</h2>
+      <nav class="space-y-2">
+        <a href="/dashboard" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg">
+          <i class="fas fa-home"></i> Dashboard
+        </a>
+        <a href="/speech-to-text" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg">
+          <i class="fas fa-microphone"></i> Speech-to-Text
+        </a>
+        <a href="/chatbot" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg">
+          <i class="fas fa-robot"></i> Chatbot
+        </a>
+        <a href="/ocr" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg">
+          <i class="fas fa-file-image"></i> OCR
+        </a>
+        <a href="/text-to-speech" class="flex items-center gap-3 py-3 px-4 text-white bg-blue-600 rounded-lg active">
+          <i class="fas fa-volume-up"></i> Text to Speech
+        </a>
+        <a href="/history" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-blue-600 rounded-lg">
+          <i class="fas fa-history"></i> Lịch sử
+        </a>
+        <a href="{{ url_for('logout') }}" class="flex items-center gap-3 py-3 px-4 text-gray-200 hover:bg-red-600 rounded-lg mt-4">
+          <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </a>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 md:ml-64 flex flex-col h-screen p-6">
+      <h1 class="text-2xl font-bold mb-6">Chuyển Văn Bản Thành Giọng Nói</h1>
+      <div class="bg-gray-900 rounded.gl/4 rounded-lg p-6 space-y-6">
+        <!-- Text Input -->
+        <div>
+          <label for="text-input" class="block text-sm font-medium text-gray-200 mb-2">Nhập văn bản</label>
+          <textarea
+            id="text-input"
+            class="w-full h-32 px-4 py-3 rounded-lg bg-gray-800 text-white focus:outline-none transition-all duration-200"
+            placeholder="Nhập văn bản bạn muốn chuyển thành giọng nói..."
+            required
+          ></textarea>
+        </div>
+
+        <!-- Voice Selection -->
+        <div>
+          <label for="voice-select" class="block text-sm font-medium text-gray-200 mb-2">Chọn giọng nói</label>
+          <select
+            id="voice-select"
+            class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white focus:outline-none transition-all duration-200"
+          >
+            <option value="male">Giọng Nam</option>
+            <option value="female">Giọng Nữ</option>
+            <option value="neutral">Giọng Trung Tính</option>
+          </select>
+        </div>
+
+        <!-- Convert Button -->
+        <button
+          id="convert-btn"
+          class="w-full bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-all duration-200"
+        >
+          <i class="fas fa-play mr-2"></i> Chuyển đổi
+        </button>
+
+        <!-- Audio Player -->
+        <div class="audio-player hidden" id="audio-player">
+          <button id="play-pause-btn" class="text-blue-600 hover:text-blue-700">
+            <i class="fas fa-play"></i>
+          </button>
+          <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+          </div>
+          <span id="current-time">0:00</span>
+          <span>/</span>
+          <span id="duration">0:00</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const convertBtn = document.getElementById("convert-btn");
+      const textInput = document.getElementById("text-input");
+      const voiceSelect = document.getElementById("voice-select");
+      const audioPlayer = document.getElementById("audio-player");
+      const playPauseBtn = document.getElementById("play-pause-btn");
+      const progress = document.getElementById("progress");
+      const currentTime = document.getElementById("current-time");
+      const duration = document.getElementById("duration");
+
+      const audio = new Audio();
+      let isPlaying = false;
+
+      function formatTime(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = Math.floor(seconds % 60);
+        return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+      }
+
+      convertBtn.addEventListener("click", async () => {
+        const text = textInput.value.trim();
+        const voice = voiceSelect.value;
+        if (!text) return;
+
+        try {
+          const res = await fetch("/text-to-speech", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice }),
+          });
+          const data = await res.json();
+          audio.src = data.audioUrl; // Giả định API trả về URL của file âm thanh
+          audioPlayer.classList.remove("hidden");
+
+          audio.onloadedmetadata = () => {
+            duration.textContent = formatTime(audio.duration);
+          };
+
+          audio.ontimeupdate = () => {
+            currentTime.textContent = formatTime(audio.currentTime);
+            progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+          };
+        } catch (err) {
+          alert("❌ Lỗi khi chuyển đổi văn bản thành giọng nói.");
+        }
+      });
+
+      playPauseBtn.addEventListener("click", () => {
+        if (isPlaying) {
+          audio.pause();
+          playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        } else {
+          audio.play();
+          playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+        isPlaying = !isPlaying;
+      });
+
+      audio.onended = () => {
+        isPlaying = false;
+        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        progress.style.width = '0%';
+        currentTime.textContent = '0:00';
+      };
+
+      // Toggle sidebar for mobile
+      window.addEventListener('resize', () => {
+        const sidebar = document.getElementById('sidebar');
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('open');
+        }
+      });
+    </script>
+  </body>
+</html>

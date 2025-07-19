@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = 'secret123'
 app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
-app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
+
 # app.config['MONGO_URI'] = 'mongodb://localhost:27017/flaskauth'
 # API key for diagnostic endpoints
 API_KEY = os.environ.get('DIAGNOSTIC_API_KEY', 'default_key_for_development')
@@ -287,7 +287,97 @@ def s2t():
         transcript=None,
         audio_url=None
     )
+@app.route('/text-to-speech', methods=['GET', 'POST'])
+@login_required
+def tts():
+    if request.method == 'POST':
+        logger.info("Processing POST request to /text-to-speech")
+        data = request.get_json()
+        text = data.get('text', '').strip()
+        voice = data.get('voice', 'male')  # Mặc định là giọng nam nếu không có
 
+        if not text:
+            logger.error("No text provided")
+            return jsonify({
+                'error': 'Vui lòng nhập văn bản để chuyển đổi.',
+                'audio_url': None
+            }), 400
+
+        # TTS API call (giả định)
+        try:
+            resp = requests.post(API_TTS, json={'text': text, 'voice': voice})
+            logger.info(f"TTS API response status code: {resp.status_code}")
+            if resp.status_code == 200:
+                api_response = resp.json()
+                audio_data = api_response.get('audio', '')  # Giả định API trả về base64 audio hoặc URL
+                # Lưu file âm thanh
+                filename = f"tts_{current_user.username}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.mp3"
+                save_path = os.path.join(UPLOAD_FOLDER, filename)
+                try:
+                    with open(save_path, 'wb') as f:
+                        f.write(requests.get(audio_data).content)  # Giả định audio_data là URL
+                    logger.info(f"Audio file saved to {save_path}")
+                except Exception as e:
+                    logger.error(f"Failed to save audio file: {e}")
+                    return jsonify({
+                        'error': f'Lỗi lưu file âm thanh: {str(e)}',
+                        'audio_url': None
+                    }), 500
+            else:
+                logger.error(f"TTS API error: {resp.status_code}, response: {resp.text}")
+                return jsonify({
+                    'error': f'Lỗi API TTS: {resp.status_code}',
+                    'audio_url': None
+                }), 500
+        except Exception as e:
+            logger.error(f"TTS API call failed: {e}")
+            return jsonify({
+                'error': f'Lỗi hệ thống: {str(e)}',
+                'audio_url': None
+            }), 500
+
+        # Verify file exists
+        if not os.path.exists(save_path):
+            logger.error(f"Audio file not found after saving: {save_path}")
+            return jsonify({
+                'error': 'Không thể lưu file âm thanh.',
+                'audio_url': None
+            }), 500
+        else:
+            logger.info(f"Audio file exists at {save_path}, size: {os.path.getsize(save_path)} bytes")
+
+        # Save to DB
+        try:
+            mongo.db.tts_history.insert_one({
+                'username': current_user.username,
+                'text': text,
+                'voice': voice,
+                'filename': filename,
+                'created_at': datetime.utcnow()
+            })
+            logger.debug("TTS result saved to database")
+        except Exception as e:
+            logger.error(f"Database error: {e}")
+            return jsonify({
+                'error': f'Lỗi lưu vào cơ sở dữ liệu: {str(e)}',
+                'audio_url': None
+            }), 500
+
+        # Build audio URL
+        audio_url = url_for('static', filename=f'uploads/{filename}', _external=True)
+        logger.info(f"Generated audio URL: {audio_url}")
+
+        return jsonify({
+            'audio_url': audio_url,
+            'error': None
+        })
+
+    # GET
+    return render_template(
+        'text-to-speech.html',
+        username=current_user.username,
+        history=mongo.db.tts_history.find({'username': current_user.username}).sort('created_at', -1)
+    )
 @app.route('/history')
 @login_required
 def history():
