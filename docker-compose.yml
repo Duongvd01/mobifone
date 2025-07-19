@@ -83,7 +83,8 @@ services:
     # No ports, just a placeholder to allow `docker compose up dev` to start only db
 
 volumes:
-  mongodb_data:
+  mongodb_prod_data:
+  mongodb_dev_data:
 
 networks:
   mobifone-network:
