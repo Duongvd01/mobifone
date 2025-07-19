@@ -9,7 +9,7 @@ services:
     ports:
       - "27018:27017"
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_prod_data:/data/db
     networks:
       - mobifone-network
 
@@ -67,7 +67,7 @@ services:
     ports:
       - "27017:27017"  # Expose default MongoDB port for local dev
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_dev_data:/data/db
     networks:
       - mobifone-network
 
