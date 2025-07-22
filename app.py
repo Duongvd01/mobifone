@@ -63,7 +63,7 @@ if os.path.exists(UPLOAD_FOLDER):
     logger.info(f"Files in upload folder: {os.listdir(UPLOAD_FOLDER)}")
 
 # External Speech-to-Text API endpoint
-API_S2T = "http://180.93.183.64:8502/api/v1/s2t/version2"
+API_S2T = "http://49.213.89.71:8502/api/v1/s2t/version2"
 
 # Initialize extensions
 mongo = PyMongo(app)
