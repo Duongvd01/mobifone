@@ -47,7 +47,7 @@ services:
       - "443:443"
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./infrastructure/nginx/mobistt.mobifone.ai.conf:/etc/nginx/conf.d/default.conf
+      - ./infrastructure/nginx/docker/mobistt.mobifone.ai.conf:/etc/nginx/conf.d/default.conf
       - ./infrastructure/nginx/mime.types:/etc/nginx/mime.types
       - /etc/ssl/mobifone_ai.pem:/etc/ssl/mobifone_ai.pem
       - /etc/ssl/mobifone.pem:/etc/ssl/mobifone.pem
@@ -56,6 +56,8 @@ services:
         condition: service_healthy
     networks:
       - mobifone-network
+    profiles:
+      - with-nginx
 
   # Development only: MongoDB exposed for local dev
   mongodb-dev:
@@ -70,7 +72,8 @@ services:
       - mongodb_dev_data:/data/db
     networks:
       - mobifone-network
-
+    profiles:
+      - with-mongodb-dev
   # Development only: placeholder for dev mode
   dev:
     image: busybox
@@ -81,7 +84,8 @@ services:
     networks:
       - mobifone-network
     # No ports, just a placeholder to allow `docker compose up dev` to start only db
-
+    profiles:
+      - with-mongodb-dev
 volumes:
   mongodb_prod_data:
   mongodb_dev_data:
