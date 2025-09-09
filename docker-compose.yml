@@ -18,6 +18,8 @@ services:
     build: .
     container_name: mobifone-flask-app
     restart: unless-stopped
+    ports:
+      - "3000:8080"
     # Port 8080 is not exposed externally, but still available to other services in the network
     environment:
       - FLASK_ENV=production
