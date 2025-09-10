@@ -38,6 +38,7 @@ services:
     volumes:
       - ./instance:/app/instance
       - ./static:/app/static
+      - ./logs:/app/logs
 
   # Nginx service
   nginx:

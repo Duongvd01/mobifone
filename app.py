@@ -14,14 +14,67 @@ from werkzeug.utils import secure_filename
 import re
 import requests
 import os
-import os
 from datetime import datetime
-import os
 import logging
 from functools import wraps
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG)
+from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
+
+# Ensure logs directory exists
+os.makedirs('logs', exist_ok=True)
+
+# Configure logging to file and console
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Get root logger and remove existing handlers
+root_logger = logging.getLogger()
+for handler in root_logger.handlers[:]:
+    root_logger.removeHandler(handler)
+
+# Add custom handlers
+# Size-based rotation (10MB)
+file_handler = RotatingFileHandler(
+    'logs/app.log', 
+    maxBytes=10485760,  # 10MB
+    backupCount=10
+)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+file_handler.setLevel(logging.DEBUG)
+root_logger.addHandler(file_handler)
+
+# Time-based rotation (daily) with custom naming
+from datetime import date
+current_date = date.today().strftime('%Y-%m-%d')
+daily_log_filename = f'logs/app_{current_date}.log'
+
+# Create daily log handler with custom suffix
+daily_handler = TimedRotatingFileHandler(
+    daily_log_filename,
+    when='midnight',
+    interval=1,
+    backupCount=30  # Keep logs for 30 days
+)
+# Set a custom suffix so new files will be named with the date
+daily_handler.suffix = "%Y-%m-%d"
+daily_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+daily_handler.setLevel(logging.DEBUG)
+root_logger.addHandler(daily_handler)
+
+# Log startup with date information
+logger = logging.getLogger(__name__)
+logger.info(f"Starting application with daily log file: {daily_log_filename}")
+
+# Console handler
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+console_handler.setLevel(logging.INFO)  # Only INFO and above to console
+root_logger.addHandler(console_handler)
+
+# Get module-specific logger
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
@@ -59,8 +112,10 @@ logger.info(f"Upload folder exists: {os.path.exists(UPLOAD_FOLDER)}")
 if os.path.exists(UPLOAD_FOLDER):
     logger.info(f"Files in upload folder: {os.listdir(UPLOAD_FOLDER)}")
 
-# External Speech-to-Text API endpoint
+# External API endpoints
 API_S2T = "http://49.213.89.71:8502/api/v1/s2t/version2"
+API_TTS = "http://49.213.89.71:8502/api/v1/tts"  # Text-to-Speech API endpoint
+API_OCR = "http://49.213.89.71:8502/api/v1/ocr"  # OCR API endpoint
 
 # Initialize extensions
 mongo = PyMongo(app)
@@ -81,10 +136,12 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
+    logger.info("Endpoint '/' accessed")
     return render_template('index.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    logger.info("Endpoint '/register' accessed")
     if request.method == 'POST':
         username = request.form['username'].strip()
         email = request.form['email'].strip()
@@ -128,6 +185,7 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    logger.info("Endpoint '/login' accessed")
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -141,6 +199,7 @@ def login():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    logger.info(f"Endpoint '/dashboard' accessed by user: {current_user.username}")
     user_history = mongo.db.transcripts.find(
         {'username': current_user.username}
     ).sort('created_at', -1)
@@ -154,12 +213,15 @@ def dashboard():
 @app.route('/logout')
 @login_required
 def logout():
+    username = current_user.username
+    logger.info(f"User '{username}' logged out")
     logout_user()
     return redirect(url_for('index'))
 
 @app.route('/speech-to-text', methods=['GET', 'POST'])
 @login_required
 def s2t():
+    logger.info(f"Endpoint '/speech-to-text' accessed by user: {current_user.username}")
     if request.method == 'POST':
         logger.info("Processing POST request to /speech-to-text")
         audio_file = request.files.get('audio_file')
@@ -217,6 +279,7 @@ def s2t():
                 resp = requests.post(API_S2T, files=files, data={'url': 'string'})
             logger.info(f"API response status code: {resp.status_code}")
             if resp.status_code == 200:
+                logger.info(f"API response success")
                 api_response = resp.json()
                 transcript_blocks = api_response.get('data', {}).get('transcript', [])
                 # Map API response to expected format
@@ -270,7 +333,10 @@ def s2t():
             test_path = os.path.join(app.static_folder, f'uploads/{filename}')
             logger.info(f"Testing file accessibility at path: {test_path}")
             logger.info(f"File exists at test path: {os.path.exists(test_path)}")
-            logger.info(f"File permissions: {oct(os.stat(test_path).st_mode)[-3:]}" if os.path.exists(test_path) else "File not found")
+            if os.path.exists(test_path):
+                logger.info(f"File permissions: {oct(os.stat(test_path).st_mode)[-3:]}")
+            else:
+                logger.info("File not found")
         except Exception as e:
             logger.error(f"Error checking file accessibility: {e}")
 
@@ -290,6 +356,7 @@ def s2t():
 @app.route('/text-to-speech', methods=['GET', 'POST'])
 @login_required
 def tts():
+    logger.info(f"Endpoint '/text-to-speech' accessed by user: {current_user.username}")
     if request.method == 'POST':
         logger.info("Processing POST request to /text-to-speech")
         data = request.get_json()
@@ -381,12 +448,14 @@ def tts():
 @app.route('/history')
 @login_required
 def history():
+    logger.info(f"Endpoint '/history' accessed by user: {current_user.username}")
     user_history = mongo.db.transcripts.find({"username": current_user.username}).sort("created_at", -1)
     return render_template("history.html", history=user_history)
 
 @app.route('/delete-history/<string:id>', methods=['DELETE'])
 @login_required
 def delete_history(id):
+    logger.info(f"Delete history request for ID {id} by user: {current_user.username}")
     try:
         item = mongo.db.transcripts.find_one({"_id": ObjectId(id), "username": current_user.username})
         if not item:
@@ -408,6 +477,7 @@ def delete_history(id):
 @app.route("/chatbot", methods=["GET", "POST"])
 @login_required
 def chatbot():
+    logger.info(f"Endpoint '/chatbot' accessed by user: {current_user.username}")
     if request.method == "GET":
         return render_template("chatbot.html", username=current_user.username)
 
@@ -425,6 +495,7 @@ def chatbot():
 @app.route('/translate', methods=['POST'])
 @login_required
 def translate():
+    logger.info(f"Endpoint '/translate' accessed by user: {current_user.username}")
     try:
         data = request.get_json()
         transcript = data.get('transcript')
@@ -465,6 +536,7 @@ def translate():
 @app.route('/ocr', methods=['GET', 'POST'])
 @login_required
 def ocr():
+    logger.info(f"Endpoint '/ocr' accessed by user: {current_user.username}")
     if request.method == 'POST':
         file = request.files.get('file')
         if not file or not file.filename:
@@ -603,20 +675,25 @@ def test_nginx():
     """Test route to diagnose Nginx proxy configuration"""
     logger.info("Test Nginx route accessed")
     
-    # Get request headers
-    headers = {k: v for k, v in request.headers.items()}
+    # Get request headers - ensure all values are JSON serializable
+    headers = {}
+    for k, v in request.headers.items():
+        # Convert all header values to strings to ensure they're serializable
+        headers[k] = str(v)
     logger.info(f"Request headers: {headers}")
     
     # Check if request came through Nginx
     proxied = 'X-Forwarded-For' in headers or 'X-Real-IP' in headers
     logger.info(f"Request appears to be proxied: {proxied}")
     
-    # Get server environment
+    # Get server environment - ensure all values are JSON serializable
     env_info = {
         'hostname': os.uname().nodename if hasattr(os, 'uname') else 'Unknown',
-        'server_software': request.environ.get('SERVER_SOFTWARE', 'Unknown'),
-        'wsgi_env': {k: v for k, v in request.environ.items() if k.startswith('wsgi.')},
-        'flask_env': app.config.get('ENV', 'Unknown'),
+        'server_software': str(request.environ.get('SERVER_SOFTWARE', 'Unknown')),
+        # Filter and stringify wsgi environment variables
+        'wsgi_env': {k: str(v) for k, v in request.environ.items() 
+                    if k.startswith('wsgi.') and not hasattr(v, 'read')},  # Exclude file-like objects
+        'flask_env': str(app.config.get('ENV', 'Unknown')),
         'request_scheme': request.scheme,
         'request_host': request.host,
         'request_url': request.url,
@@ -624,6 +701,7 @@ def test_nginx():
     }
     logger.info(f"Server environment: {env_info}")
     
+    # Ensure all data is serializable
     return jsonify({
         'headers': headers,
         'proxied': proxied,
@@ -639,10 +717,12 @@ def not_found_error(error):
 
 @app.errorhandler(500)
 def internal_error(error):
+    logger.error(f"500 error: {str(error)}")
     return render_template('500.html'), 500
 
 @app.errorhandler(403)
 def forbidden_error(error):
+    logger.error(f"403 error: {request.url}")
     return render_template('404.html'), 403
 
 if __name__ == '__main__':
