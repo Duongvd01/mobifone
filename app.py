@@ -227,11 +227,25 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        logger.info(f"Login attempt for user: {username}")
+        
         user_data = mongo.db.users.find_one({'username': username})
         if user_data and bcrypt.check_password_hash(user_data['password'], password):
-            login_user(User(user_data))
+            logger.info(f"Login successful for user: {username}")
+            user = User(user_data)
+            login_user(user)
+            
+            # Log the redirect destination
+            next_page = request.args.get('next')
+            if next_page:
+                logger.info(f"Redirecting to next page: {next_page}")
+                return redirect(next_page)
+            
+            logger.info(f"Redirecting to dashboard")
             return redirect(url_for('dashboard'))
-        flash('Sai tài khoản hoặc mật khẩu!')
+        else:
+            logger.warning(f"Failed login attempt for user: {username}")
+            flash('Sai tài khoản hoặc mật khẩu!')
     return render_template('login.html')
 
 @app.route('/dashboard')
@@ -750,7 +764,7 @@ def test_nginx():
 # Error handlers
 @app.errorhandler(404)
 def not_found_error(error):
-    logger.error(f"404 error: {request.url}")
+    # logger.error(f"404 error: {request.url}")
     return render_template('404.html'), 404
 
 @app.errorhandler(500)
