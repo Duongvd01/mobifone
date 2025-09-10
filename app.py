@@ -97,27 +97,27 @@ cors = CORS(app, resources={
 })
 
 # Middleware kiểm tra Origin trước khi xử lý request
-@app.before_request
-def check_origin():
-    origin = request.headers.get('Origin')
+# @app.before_request
+# def check_origin():
+#     origin = request.headers.get('Origin')
     
-    # Bỏ qua kiểm tra cho các request không có Origin (như direct browser access)
-    if not origin:
-        return None
+#     # Bỏ qua kiểm tra cho các request không có Origin (như direct browser access)
+#     if not origin:
+#         return None
         
-    # Kiểm tra origin có trong danh sách cho phép
-    if origin not in ALLOWED_ORIGINS:
-        logger.warning(f"Blocked request from unauthorized origin: {origin}")
-        # Phương pháp 1: Trả về JSON response với mã lỗi 403
-        # return jsonify({"error": "Unauthorized origin"}), 403
+#     # Kiểm tra origin có trong danh sách cho phép
+#     if origin not in ALLOWED_ORIGINS:
+#         logger.warning(f"Blocked request from unauthorized origin: {origin}")
+#         # Phương pháp 1: Trả về JSON response với mã lỗi 403
+#         # return jsonify({"error": "Unauthorized origin"}), 403
         
-        # Phương pháp 2: Sử dụng abort để cancel request ngay lập tức
-        abort(403)  # Điều này sẽ kích hoạt error handler 403 đã định nghĩa
+#         # Phương pháp 2: Sử dụng abort để cancel request ngay lập tức
+#         abort(403)  # Điều này sẽ kích hoạt error handler 403 đã định nghĩa
         
-        # Phương pháp 3: Silent drop (ít được khuyến nghị)
-        # return "", 444  # Nginx: Connection Closed Without Response
+#         # Phương pháp 3: Silent drop (ít được khuyến nghị)
+#         # return "", 444  # Nginx: Connection Closed Without Response
         
-    return None
+#     return None
 
 # app.config['MONGO_URI'] = 'mongodb://localhost:27017/flaskauth'
 # API key for diagnostic endpoints
