@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
 from flask_login import (
     LoginManager,
     UserMixin,
@@ -80,6 +81,36 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = 'secret123'
 app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://mongodb:27017/flaskauth')
+
+# Cấu hình CORS - chỉ cho phép domain chính
+ALLOWED_ORIGINS = ['https://mobistt.mobifone.ai', 'http://mobistt.mobifone.ai', 'http://localhost:3000']
+cors = CORS(app, resources={
+    r"/*": {
+        "origins": ALLOWED_ORIGINS,
+        "allow_headers": [
+            "Content-Type", 
+            "Authorization", 
+            "X-API-Key"
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    }
+})
+
+# Middleware kiểm tra Origin trước khi xử lý request
+@app.before_request
+def check_origin():
+    origin = request.headers.get('Origin')
+    
+    # Bỏ qua kiểm tra cho các request không có Origin (như direct browser access)
+    if not origin:
+        return None
+        
+    # Kiểm tra origin có trong danh sách cho phép
+    if origin not in ALLOWED_ORIGINS:
+        logger.warning(f"Blocked request from unauthorized origin: {origin}")
+        return jsonify({"error": "Unauthorized origin"}), 403
+        
+    return None
 
 # app.config['MONGO_URI'] = 'mongodb://localhost:27017/flaskauth'
 # API key for diagnostic endpoints
