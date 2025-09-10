@@ -18,6 +18,7 @@ import os
 from datetime import datetime
 import logging
 from functools import wraps
+import werkzeug.serving
 
 # Set up logging
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
@@ -77,6 +78,48 @@ root_logger.addHandler(console_handler)
 
 # Get module-specific logger
 logger = logging.getLogger(__name__)
+
+# Tạo filter để lọc các log request từ domain lạ
+class DomainFilter(logging.Filter):
+    def __init__(self, allowed_domains=None):
+        super().__init__()
+        self.allowed_domains = allowed_domains or ['mobistt.mobifone.ai', 'localhost', '127.0.0.1']
+    
+    def filter(self, record):
+        # Kiểm tra nếu là log từ Werkzeug và có thông tin về request
+        if hasattr(record, 'msg') and isinstance(record.msg, str):
+            # Format của log Werkzeug: 127.0.0.1 - - [10/Sep/2025 15:00:20] "GET / HTTP/1.1" 200 -
+            if 'smart-vision.mobifone.ai' in record.msg:
+                return False
+            
+            # Lọc các request từ IP không xác định hoặc không phải localhost
+            if ' - - [' in record.msg and not record.msg.startswith(('127.0.0.1', 'localhost')):
+                # Kiểm tra nếu là request đến /Service/api/
+                if '/Service/api/' in record.msg:
+                    return False
+                
+                # Kiểm tra nếu là request 404 hoặc 403
+                if '" 404 ' in record.msg or '" 403 ' in record.msg:
+                    return False
+        
+        # Kiểm tra nếu là log từ Werkzeug và có thông tin về request trong args
+        if hasattr(record, 'args') and isinstance(record.args, tuple) and len(record.args) >= 3:
+            try:
+                # Lấy thông tin client IP và request
+                client_addr = record.args[0] if len(record.args) > 0 else ''
+                if client_addr and client_addr not in ('127.0.0.1', 'localhost'):
+                    # Nếu không phải localhost, kiểm tra thêm
+                    request_line = record.args[2] if len(record.args) > 2 else ''
+                    if '/Service/api/' in request_line:
+                        return False
+            except (AttributeError, IndexError):
+                pass
+        
+        return True
+
+# Áp dụng filter cho Werkzeug logger
+werkzeug_logger = logging.getLogger('werkzeug')
+werkzeug_logger.addFilter(DomainFilter())
 
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = 'secret123'
@@ -774,7 +817,6 @@ def internal_error(error):
 
 @app.errorhandler(403)
 def forbidden_error(error):
-    logger.error(f"403 error: {request.url}, Origin: {request.headers.get('Origin', 'Unknown')}")
     # Trả về JSON response cho API endpoints
     if request.path.startswith('/api/') or request.headers.get('Accept') == 'application/json':
         return jsonify({"error": "Unauthorized origin", "code": 403}), 403
