@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
@@ -108,7 +108,14 @@ def check_origin():
     # Kiểm tra origin có trong danh sách cho phép
     if origin not in ALLOWED_ORIGINS:
         logger.warning(f"Blocked request from unauthorized origin: {origin}")
-        return jsonify({"error": "Unauthorized origin"}), 403
+        # Phương pháp 1: Trả về JSON response với mã lỗi 403
+        # return jsonify({"error": "Unauthorized origin"}), 403
+        
+        # Phương pháp 2: Sử dụng abort để cancel request ngay lập tức
+        abort(403)  # Điều này sẽ kích hoạt error handler 403 đã định nghĩa
+        
+        # Phương pháp 3: Silent drop (ít được khuyến nghị)
+        # return "", 444  # Nginx: Connection Closed Without Response
         
     return None
 
@@ -753,7 +760,11 @@ def internal_error(error):
 
 @app.errorhandler(403)
 def forbidden_error(error):
-    logger.error(f"403 error: {request.url}")
+    logger.error(f"403 error: {request.url}, Origin: {request.headers.get('Origin', 'Unknown')}")
+    # Trả về JSON response cho API endpoints
+    if request.path.startswith('/api/') or request.headers.get('Accept') == 'application/json':
+        return jsonify({"error": "Unauthorized origin", "code": 403}), 403
+    # Trả về HTML template cho các request thông thường
     return render_template('404.html'), 403
 
 if __name__ == '__main__':
