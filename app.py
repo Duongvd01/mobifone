@@ -84,22 +84,43 @@ class DomainFilter(logging.Filter):
     def __init__(self, allowed_domains=None):
         super().__init__()
         self.allowed_domains = allowed_domains or ['mobistt.mobifone.ai', 'localhost', '127.0.0.1']
+        # IP trong mạng Docker
+        self.docker_ips = ['172.20.0.1', '172.20.0.2', '172.20.0.3']
+        # Các path cần lọc
+        self.filtered_paths = [
+            '/Service/api/',
+            '/Service/api/token/auth',
+            '/Service/api/Device',
+            '/Service/api/device/status/'
+        ]
     
     def filter(self, record):
         # Kiểm tra nếu là log từ Werkzeug và có thông tin về request
         if hasattr(record, 'msg') and isinstance(record.msg, str):
+            msg = record.msg
+            
+            # Lọc các log từ Docker network
+            for ip in self.docker_ips:
+                if ip in msg:
+                    return False
+            
+            # Lọc các request đến các endpoint /Service/api/
+            for path in self.filtered_paths:
+                if path in msg:
+                    return False
+            
             # Format của log Werkzeug: 127.0.0.1 - - [10/Sep/2025 15:00:20] "GET / HTTP/1.1" 200 -
-            if 'smart-vision.mobifone.ai' in record.msg:
+            if 'smart-vision.mobifone.ai' in msg:
                 return False
             
             # Lọc các request từ IP không xác định hoặc không phải localhost
-            if ' - - [' in record.msg and not record.msg.startswith(('127.0.0.1', 'localhost')):
-                # Kiểm tra nếu là request đến /Service/api/
-                if '/Service/api/' in record.msg:
+            if ' - - [' in msg:
+                # Chỉ cho phép log từ localhost
+                if not msg.startswith(('127.0.0.1', 'localhost')):
                     return False
                 
-                # Kiểm tra nếu là request 404 hoặc 403
-                if '" 404 ' in record.msg or '" 403 ' in record.msg:
+                # Lọc các status code 404 và 403
+                if '" 404 ' in msg or '" 403 ' in msg:
                     return False
         
         # Kiểm tra nếu là log từ Werkzeug và có thông tin về request trong args
@@ -107,11 +128,20 @@ class DomainFilter(logging.Filter):
             try:
                 # Lấy thông tin client IP và request
                 client_addr = record.args[0] if len(record.args) > 0 else ''
+                
+                # Lọc các IP trong mạng Docker
+                if client_addr in self.docker_ips:
+                    return False
+                
+                # Lọc các IP không phải localhost
                 if client_addr and client_addr not in ('127.0.0.1', 'localhost'):
-                    # Nếu không phải localhost, kiểm tra thêm
-                    request_line = record.args[2] if len(record.args) > 2 else ''
-                    if '/Service/api/' in request_line:
-                        return False
+                    # Kiểm tra request line
+                    request_line = str(record.args[2]) if len(record.args) > 2 else ''
+                    
+                    # Lọc các request đến các endpoint /Service/api/
+                    for path in self.filtered_paths:
+                        if path in request_line:
+                            return False
             except (AttributeError, IndexError):
                 pass
         
